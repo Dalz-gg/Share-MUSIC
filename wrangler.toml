@@ -1,0 +1,12 @@
+name = "playlist-share"
+pages_build_output_dir = "dist-cf"
+compatibility_date = "2026-11-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "playlist-share"
+database_id = "95930627-568b-4269-ae05-fea27c6de887"
+
+[[kv_namespaces]]
+binding = "COVERS"
+id = "e8bcd0adbf974142a22ca738136475d2"

@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS kv (
+  store TEXT NOT NULL,
+  k TEXT NOT NULL,
+  v TEXT NOT NULL,
+  exp INTEGER,
+  updated INTEGER,
+  PRIMARY KEY (store, k)
+);

@@ -1,0 +1,15 @@
+{
+  "name": "share-music",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "bash cf/build.sh",
+    "deploy": "bash cf/deploy.sh"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  }
+}

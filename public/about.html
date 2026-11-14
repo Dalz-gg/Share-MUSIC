@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>このアプリについて | Share MUSIC</title>
+  <meta name="description" content="Share MUSIC は、YouTube Music のプレイリストやおすすめの曲を共有して、みんなで聴いて、いいねし合えるウェブアプリです。">
+  <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+  <script>try { var d = document.documentElement, c = JSON.parse(localStorage.getItem('ps.palette') || 'null'); d.dataset.theme = 'dark'; d.dataset.palette = /^(dusk|ocean|forest|sunset|sakura|mono)$/.test(c) ? c : 'dusk'; } catch (e) {}</script>
+  <style>
+    .doc h1 { font-family: var(--display); font-size: clamp(26px, 6vw, 36px); line-height: 1.25; margin: 28px 0 6px; }
+    .doc h2 { font-weight: 700; font-size: 17px; margin: 30px 0 8px; padding-left: 10px; border-left: 4px solid var(--accent); }
+    .doc p, .doc li { font-size: 15px; line-height: 1.9; }
+    .doc ul { padding-left: 1.3em; margin: 8px 0; }
+    .doc a { color: var(--accent); }
+    .doc .date { font-family: var(--mono); font-size: 12px; color: var(--sub); letter-spacing: .08em; }
+  </style>
+</head>
+<body>
+  <header class="mast">
+    <a class="brand" href="/"><span class="mark" aria-hidden="true"><i></i></span><span class="word">Share MUSIC</span></a>
+    <div class="mast-r"><a class="helplink" href="/">ホーム</a></div>
+  </header>
+  <div class="stripes" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+  <main class="wrap doc">
+    <h1>Share MUSIC について</h1>
+    <p>Share MUSIC は、<b>YouTube Music のプレイリストやおすすめの1曲を共有して、みんなで聴いて、いいねし合える</b>無料のウェブアプリです。個人（Dalz）が運営しています。</p>
+    <h2>できること</h2>
+    <ul>
+      <li>みんなが共有したプレイリストやおすすめ曲を、ジャンルや人気順でさがして、その場で試聴する（ログイン不要）</li>
+      <li>いいね・コメント（ログイン不要）、ブックマーク・フォロー・お知らせ（ログインが必要）</li>
+      <li>自分の YouTube Music のプレイリストに、タイトル・紹介文・ジャンル・カバー画像を付けて共有する</li>
+      <li>好きな曲を検索して、紹介文を添えて「おすすめ曲」として投稿する</li>
+      <li>気に入ったプレイリストを、自分の YouTube アカウントにコピーする</li>
+    </ul>
+    <h2>Google アカウント（YouTube）の利用について</h2>
+    <p>見る・聴く・いいね・コメントはログインなしで使えます。共有・投稿・コピーなどをするときだけ Google アカウントでログインし、YouTube へのアクセス（<code>https://www.googleapis.com/auth/youtube</code>）を許可していただきます。この許可は、あなたが操作したときに次のことをするためだけに使います。</p>
+    <ul>
+      <li>あなたのチャンネル名・アイコンの表示と、本人であることの確認</li>
+      <li>あなたのプレイリストの一覧と曲目の読み込み</li>
+      <li>共有を選んだプレイリストのタイトル・紹介文・公開範囲の変更</li>
+      <li>「自分のアカウントにコピー」での、新しいプレイリストの作成と曲の追加</li>
+    </ul>
+    <p>動画の削除、YouTube へのコメント、評価、登録チャンネルの変更は行いません。Google から受け取るデータの扱いは <a href="/privacy">プライバシーポリシー</a> をご覧ください。アクセスの許可は <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">Google アカウントの設定</a> からいつでも取り消せます。</p>
+    <p>お問い合わせ：<a href="mailto:dalzgamesch@gmail.com">dalzgamesch@gmail.com</a></p>
+    <p style="margin-top:22px"><a class="btn solid" href="/" style="color:var(--on-grad)">Share MUSIC を開く</a></p>
+
+    <h2 id="en">About Share MUSIC (English)</h2>
+    <p><b>Share MUSIC</b> is a free web app, run by an individual (Dalz), for sharing YouTube Music playlists and favourite songs, listening to them together, and liking and commenting on them.</p>
+    <ul>
+      <li>Browse playlists and recommended songs shared by others, filter them by genre, and preview them in the page (no sign-in needed).</li>
+      <li>Like and comment without signing in; bookmarks, follows and notifications need sign-in.</li>
+      <li>Share one of your own YouTube Music playlists with a title, description, genres and cover image.</li>
+      <li>Post a recommended song with a short note.</li>
+      <li>Copy a playlist you like into your own YouTube account.</li>
+    </ul>
+    <p><b>How we use your Google account.</b> Signing in with Google is only required to share, post or copy. The app requests the <code>https://www.googleapis.com/auth/youtube</code> scope and uses it only when you take an action: to show your channel name and icon and confirm your channel ID; to list your playlists and read their tracks; to update the title, description and privacy status of a playlist you choose to share; and to create a playlist and add tracks when you copy one to your account. It never deletes videos, comments on YouTube, rates videos or changes subscriptions. Read the <a href="/privacy#en">Privacy Policy</a> for details. Contact: <a href="mailto:dalzgamesch@gmail.com">dalzgamesch@gmail.com</a>. You can revoke access at any time in your <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">Google Account permissions</a>.</p>
+  </main>
+  <footer class="foot"><span>© Dalz 2026</span><a href="/privacy">プライバシーポリシー / Privacy Policy</a></footer>
+</body>
+</html>

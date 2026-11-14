@@ -1,0 +1,5 @@
+# 共有ページ（/p/プレイリストID）をアプリで表示するための設定。消さないでください。
+/p/*  /index.html  200
+/me   /index.html  200
+/u/*  /index.html  200
+/admin  /index.html  200

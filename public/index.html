@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="google-site-verification" content="UzKWJGOOcBFPQZmBWWZ8xaH-b2gvgsp6LVh4XumG9LA" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Share MUSIC</title>
+  <meta name="description" content="あなたの好きが誰かの1曲に。YouTube Music のプレイリストやおすすめの曲を共有して、みんなで聴いて、いいねし合える場所。">
+  <meta property="og:site_name" content="Share MUSIC">
+  <meta property="og:title" content="Share MUSIC">
+  <meta property="og:description" content="あなたの好きが誰かの1曲に。">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://playlist-share.netlify.app/og.png?v=4">
+  <meta property="og:url" content="https://playlist-share.netlify.app/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Share MUSIC">
+  <meta name="twitter:description" content="あなたの好きが誰かの1曲に。">
+  <meta name="twitter:image" content="https://playlist-share.netlify.app/og.png?v=4">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=2">
+  <meta name="apple-mobile-web-app-title" content="Share MUSIC">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#0F0F12">
+  <link rel="icon" href="/icons/favicon.svg?v=2" type="image/svg+xml">
+  <link rel="icon" href="/icons/favicon-32.png?v=2" sizes="32x32" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=IBM+Plex+Mono:wght@400;500;600&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+  <style>/* loading screen: shown until the app has drawn its first page */
+    #splash { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; background: #0F0F12; color: #EEEAE2; transition: opacity .5s ease, visibility .5s; }
+    #splash.out { opacity: 0; visibility: hidden; }
+    #splash .sp-inner { display: grid; justify-items: center; gap: 26px; }
+    #splash .sp-deck { position: relative; width: 168px; height: 168px; }
+    #splash .sp-disc { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle, #0F0F12 0 3%, var(--g1, #D9668C) 3.5% 30%, rgba(0,0,0,.4) 30.5% 31.5%, transparent 32%), repeating-radial-gradient(circle, #121211 0 1.5px, #1d1d1b 1.5px 3px); box-shadow: 0 10px 30px rgba(0,0,0,.28); animation: sp-spin 1.6s linear infinite, sp-in .7s cubic-bezier(.2,.8,.2,1) both; }
+    #splash .sp-disc::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(from 30deg, transparent 0 8%, rgba(255,255,255,.16) 12%, transparent 18% 58%, rgba(255,255,255,.1) 62%, transparent 68%); animation: sp-spin 1.6s linear infinite reverse; }
+    #splash .sp-arm { position: absolute; right: -26px; top: -6px; width: 14px; height: 14px; border-radius: 50%; background: currentColor; transform-origin: 50% 50%; transform: rotate(-40deg); animation: sp-arm 1s .4s cubic-bezier(.2,.8,.2,1) forwards; }
+    #splash .sp-arm::after { content: ""; position: absolute; left: 5.5px; top: 7px; width: 3px; height: 92px; background: currentColor; border-radius: 2px; transform-origin: 50% 0; transform: rotate(22deg); }
+    #splash .sp-word { font: 600 22px/1 "IBM Plex Mono", ui-monospace, monospace; letter-spacing: .3em; display: flex; padding-left: .3em; }
+    #splash .sp-word span { display: inline-block; opacity: 0; transform: translateY(14px); animation: sp-letter .55s cubic-bezier(.2,.8,.2,1) forwards; }
+    #splash .sp-word span.m { color: var(--g1, #D9668C); }
+    #splash .sp-eq { display: flex; gap: 4px; height: 18px; align-items: flex-end; }
+    #splash .sp-eq i { width: 4px; height: 4px; background: var(--g1, #D9668C); border-radius: 1px; animation: sp-eq .9s ease-in-out infinite; }
+    #splash .sp-eq i:nth-child(2) { animation-delay: .15s; } #splash .sp-eq i:nth-child(3) { animation-delay: .3s; } #splash .sp-eq i:nth-child(4) { animation-delay: .45s; } #splash .sp-eq i:nth-child(5) { animation-delay: .6s; }
+    @keyframes sp-spin { to { transform: rotate(360deg); } }
+    @keyframes sp-in { from { opacity: 0; transform: scale(.85) rotate(-60deg); } }
+    @keyframes sp-arm { to { transform: rotate(0deg); } }
+    @keyframes sp-letter { to { opacity: 1; transform: none; } }
+    @keyframes sp-eq { 0%, 100% { height: 4px; } 50% { height: 18px; } }
+  </style>
+
+  <script>/* apply saved theme before first paint (no flash) */
+    try { var d = document.documentElement, c = JSON.parse(localStorage.getItem('ps.palette') || 'null');
+      d.dataset.theme = 'dark'; d.dataset.palette = /^(dusk|ocean|forest|sunset|sakura|mono)$/.test(c) ? c : 'dusk'; } catch (e) { document.documentElement.dataset.palette = 'dusk'; }
+  </script>
+</head>
+<body>
+  <div id="aura" aria-hidden="true"><i></i><i></i><i></i></div>
+  <div id="bgart" aria-hidden="true"></div>
+  <div id="splash" role="status" aria-label="読み込み中">
+    <div class="sp-inner">
+      <div class="sp-deck"><div class="sp-disc"></div><div class="sp-arm"></div></div>
+      <div class="sp-word"><span style="animation-delay:0.25s">S</span><span style="animation-delay:0.31s">H</span><span style="animation-delay:0.37s">A</span><span style="animation-delay:0.43s">R</span><span style="animation-delay:0.49s">E</span><span style="animation-delay:0.55s">&nbsp;</span><span class="m" style="animation-delay:0.61s">M</span><span class="m" style="animation-delay:0.67s">U</span><span class="m" style="animation-delay:0.73s">S</span><span class="m" style="animation-delay:0.79s">I</span><span class="m" style="animation-delay:0.85s">C</span></div>
+      <div class="sp-eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+    </div>
+  </div>
+  <script>window.__splashAt = Date.now(); setTimeout(function () { var s = document.getElementById('splash'); if (s) s.classList.add('out'); }, 6000); /* never stay longer than 6s */</script>
+  <header class="mast">
+    <a class="brand" href="/">
+      <span class="mark" aria-hidden="true"><i></i></span>
+      <span class="word">Share MUSIC</span>
+    </a>
+    <div class="mast-r"><div id="conn" class="conn"></div><a class="gear" href="/search" data-act="go" data-to="/search" aria-label="さがす"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg></a><a class="gear bell" id="bell" href="/notifs" data-act="go" data-to="/notifs" aria-label="お知らせ" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg><i class="dot" hidden></i></a><button class="gear" data-act="settings" aria-label="配色"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.8 1.8-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.7 1.7-1.7H16a5 5 0 0 0 5-5c0-4-4-7.2-9-7.2z"/><circle cx="7.5" cy="11" r="1.2" fill="currentColor"/><circle cx="10.5" cy="7" r="1.2" fill="currentColor"/><circle cx="15.5" cy="7.5" r="1.2" fill="currentColor"/></svg></button><a class="helplink" href="/#help">使い方</a></div>
+  </header>
+  <div class="stripes" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+  <main id="app" class="wrap"></main>
+  <div class="sheet-layer" id="sheet" hidden></div>
+  <nav class="tabbar" id="tabbar" aria-label="メニュー"></nav>
+  <div id="lyrics" class="lyrics" hidden></div>
+  <div id="player" class="player" hidden></div>
+  <div id="modal" class="modal" hidden></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <footer class="foot"><span>© Dalz 2026</span><span class="foot-l"><a href="/about">このアプリについて</a><a href="/privacy">プライバシーポリシー</a></span></footer>
+
+  <script src="/config.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="/fx.js"></script>
+  <script src="/media.js"></script>
+  <script src="/community.js"></script>
+  <script src="/posts.js"></script>
+  <script src="/party.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
