@@ -258,7 +258,8 @@ const Songs = {
         <label class="small muted">曲名</label><input class="input" id="song-title" maxlength="120" value="${esc(p.name)}">
         <label class="small muted">アーティスト</label><input class="input" id="song-artist" maxlength="80" value="${esc(p.artist)}">
         <label class="small muted">ジャンル（必須・3つまで）</label>${genrePicker('song-genres', p.genres || [])}
-        <label class="small muted">紹介文</label><textarea class="textarea" id="song-desc" maxlength="300" placeholder="この曲のおすすめポイント（300文字まで）"></textarea>
+        ${window.Discover ? Discover.postFields(p) : ''}
+        <label class="small muted">ひとこと</label><textarea class="textarea" id="song-desc" maxlength="300" placeholder="この曲のおすすめポイント（300文字まで）"></textarea>
         <div class="row"><span class="spacer"></span><button class="btn quiet sm" data-act="song-unpick">選び直す</button><button class="btn accent" data-act="song-post">掲載する</button></div>` : ''}
     </div>`;
   },
@@ -312,6 +313,7 @@ const Songs = {
       const h = await Social.headers(); if (!h) throw new AuthError('ログインしてください');
       const r = await fetch('/api/songs', { method: 'POST', headers: { ...h, 'Content-Type': 'application/json' }, body: JSON.stringify({
         videoId: p.videoId, art: p.art || '', title: $('#song-title').value.trim(), artist: $('#song-artist').value.trim(), genres: pickedGenres('song-genres'), desc: $('#song-desc').value.trim(),
+        ...(window.Discover?.postBody(p) || {}),
       }) });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.error || '掲載できませんでした');

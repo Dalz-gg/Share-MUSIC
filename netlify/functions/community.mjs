@@ -3,7 +3,8 @@
  *   GET  /api/comments?id=                                             -> { items }
  *   POST /api/comments?id=         body { name, text }                 -> { items }      (no login; rate-limited)
  *   GET  /api/songs                                                    -> { items }      recommended songs
- *   POST /api/songs                body { videoId, title, artist, genre, desc }   (login)
+ *   POST /api/songs                body { videoId, title, artist, genre, desc, moment?: { t, line }, scenes?: [] }   (login)
+ *   PUT  /api/songs?sid=           body { title, artist, genres, desc, moment?, scenes? } or just { moment?, scenes? }   (login, own song)
  *   DELETE /api/songs?sid=                                             (login, own song)
  *   GET  /api/song-search?q= | ?url=                                   -> { items }      YouTube search (CDN cached)
  *   POST /api/admin/login          body { password }                   -> { token }      (ADMIN_PASSWORD env)
@@ -20,6 +21,18 @@ const VID_RE = /^[\w-]{11}$/;
 /** genres: 1-3 known ids, required */
 const pickGenres = (g) => [...new Set((Array.isArray(g) ? g : [g]).filter((x) => GENRES.includes(x)))].slice(0, 3);
 const GENRES = ['jpop', 'rock', 'anime', 'citypop', 'kpop', 'western', 'hiphop', 'edm', 'chill', 'bgm', 'other'];
+/** 「ここを聴いて」: moment { t: seconds 0..3600, line: ≤120 chars } and up to 3 scene ids (same ids as Discover.SCENES in public/discover.js).
+ *  Returns only the keys present in the body, so a PUT without them keeps the stored values; moment: null removes it. */
+const SCENES = ['night', 'morning', 'rain', 'drive', 'work', 'heartbreak', 'cheer', 'sleepless', 'season', 'love', 'cry', 'walk'];
+function momentFields(b) {
+  const out = {};
+  if ('moment' in b) {
+    const t = Number(b.moment?.t);
+    out.moment = b.moment && Number.isFinite(t) && t >= 0 && t <= 3600 ? { t: Math.round(t * 10) / 10, line: clip(b.moment.line, 120) } : undefined;
+  }
+  if ('scenes' in b) out.scenes = [...new Set((Array.isArray(b.scenes) ? b.scenes : []).filter((x) => SCENES.includes(x)))].slice(0, 3);
+  return out;
+}
 
 const db = () => getStore({ name: 'gallery', consistency: 'strong' });
 const json = (obj, status = 200, cdn = 'no-store') => new Response(JSON.stringify(obj), {
@@ -201,9 +214,15 @@ async function songs(req, url) {
     if (i < 0) return json({ error: 'not found' }, 404);
     if (list[i].byId !== who.id) return json({ error: '投稿した本人だけが編集できます' }, 403);
     const b = await req.json().catch(() => ({}));
+    const mf = momentFields(b);
+    if (b.genres === undefined && Object.keys(mf).length) { // only the moment / scenes (song page "ここを聴いて" editor)
+      list[i] = { ...list[i], ...mf, updated: Date.now() };
+      await store.setJSON('songs', list);
+      return json({ ok: true, item: list[i] });
+    }
     const genres = pickGenres(b.genres);
     if (!genres.length) return json({ error: 'ジャンルを1つ以上選んでください' }, 400);
-    list[i] = { ...list[i], title: clip(b.title, 120) || list[i].title, artist: clip(b.artist, 80) || list[i].artist, desc: clip(b.desc, 300), genres, genre: genres[0], updated: Date.now() };
+    list[i] = { ...list[i], title: clip(b.title, 120) || list[i].title, artist: clip(b.artist, 80) || list[i].artist, desc: clip(b.desc, 300), genres, genre: genres[0], ...mf, updated: Date.now() };
     await store.setJSON('songs', list);
     return json({ ok: true, item: list[i] });
   }
@@ -233,7 +252,7 @@ async function songs(req, url) {
     thumb: th.medium?.url || th.high?.url || th.default?.url || `https://i.ytimg.com/vi/${b.videoId}/mqdefault.jpg`,
     d: isoSec(v.contentDetails?.duration), embed: v.status?.embeddable !== false, src: /-\s*topic$/i.test(v.snippet?.channelTitle || '') ? 'audio' : 'mv',
     ...(/^https:\/\/is\d+-ssl\.mzstatic\.com\/[\w./%-]+$/.test(b.art || '') ? { art: b.art } : {}),
-    genre, genres, desc: clip(b.desc, 300), by: clip(who.name, 60), byId: who.id, at: Date.now(),
+    genre, genres, desc: clip(b.desc, 300), ...momentFields(b), by: clip(who.name, 60), byId: who.id, at: Date.now(),
   });
   await store.setJSON('songs', list.slice(0, 2000));
   return json({ ok: true, sid });
