@@ -12,6 +12,7 @@
  */
 import { getStore } from '@netlify/blobs';
 import { notify, ownerOf, isBanned, BANNED_MSG } from './social.mjs';
+import { recordSpread } from './spread.mjs';
 
 const API_KEY = 'AIzaSyA4gaZyYp09zqvc8jbBmjqJRruWDhh80mM';
 const SITE = globalThis.__SITE || 'https://playlist-share.netlify.app';
@@ -193,6 +194,7 @@ async function songs(req, url) {
     list[i] = { ...s, also: also.slice(0, 200) };
     await store.setJSON('songs', list);
     if (!leaving && !(s.also || []).some((x) => x.id === who.id)) await notify(store, s.byId, { t: 'also', kind: 's', id: sid, title: s.title, from: who.name, fromId: who.id, text: clip(b.desc, 120) });
+    if (!leaving) await recordSpread(store, { sid, from: { id: s.byId, name: s.by }, to: { id: who.id, name: who.name }, kind: 'also' });
     return json({ ok: true, item: list[i], joined: !leaving });
   }
   if (req.method === 'PUT') {
@@ -224,6 +226,7 @@ async function songs(req, url) {
     same.also = [...(same.also || []), { id: who.id, name: clip(who.name, 60), desc: clip(b.desc, 300), at: Date.now() }].slice(0, 200);
     await store.setJSON('songs', list);
     await notify(store, same.byId, { t: 'also', kind: 's', id: same.sid, title: same.title, from: who.name, fromId: who.id, text: clip(b.desc, 120) });
+    await recordSpread(store, { sid: same.sid, from: { id: same.byId, name: same.by }, to: { id: who.id, name: who.name }, kind: 'also' });
     return json({ ok: true, sid: same.sid, joined: true });
   }
   const sid = (await sha(b.videoId + who.id + Date.now())).slice(0, 12);

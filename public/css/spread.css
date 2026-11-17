@@ -1,1 +1,80 @@
 /* Stage 4 — 布教の木 (how a recommendation spread from person to person) */
+#song-spread { margin-top: 26px; }
+#song-spread .label b svg { width: 15px; height: 15px; vertical-align: -2px; }
+.spr-card {
+  position: relative; padding: 14px 14px 12px; border-radius: 18px; overflow: hidden;
+  background: var(--frost-hi), var(--glass); border: 1px solid var(--frost-edge, var(--line));
+  -webkit-backdrop-filter: blur(14px) saturate(1.3); backdrop-filter: blur(14px) saturate(1.3);
+  animation: spr-in .5s var(--spring, ease-out) both;
+}
+.spr-card::before {
+  content: ""; position: absolute; inset: -40% -20% auto auto; width: 220px; height: 220px; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, color-mix(in srgb, var(--g2) 28%, transparent), transparent 70%); opacity: .55;
+}
+.spr-sum { position: relative; font-size: 14px; color: var(--sub); margin-bottom: 10px; }
+.spr-sum b { font-size: 18px; background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.spr-dep { font-size: 12px; margin-left: 2px; }
+.spr-scroll { position: relative; overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; padding-bottom: 4px; scrollbar-width: thin; }
+
+/* the tree: nested lists with soft gradient branch lines */
+.spr-tree, .spr-tree ul { list-style: none; margin: 0; padding: 0; }
+.spr-tree { width: max-content; min-width: 100%; }
+.spr-tree + .spr-tree { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); }
+.spr-tree ul { margin-left: 15px; padding-left: 16px; position: relative; }
+.spr-tree ul > li { position: relative; padding-top: 8px; }
+/* vertical branch, stopping at the last child's elbow */
+.spr-tree ul > li::before {
+  content: ""; position: absolute; left: -16px; top: 0; width: 2px; height: 100%; border-radius: 2px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--g1) 60%, transparent), color-mix(in srgb, var(--g2) 60%, transparent));
+}
+.spr-tree ul > li:last-child::before { height: 25px; }
+/* elbow into the child */
+.spr-tree ul > li::after {
+  content: ""; position: absolute; left: -16px; top: 23px; width: 12px; height: 2px; border-radius: 2px;
+  background: color-mix(in srgb, var(--g2) 60%, transparent);
+}
+.spr-row { display: flex; align-items: center; gap: 6px; min-height: 32px; }
+.spr-p {
+  display: inline-flex; align-items: center; gap: 7px; min-width: 0; max-width: 12.5em; padding: 3px 11px 3px 3px; border-radius: 999px;
+  background: var(--glass-2); color: var(--ink); text-decoration: none; font-size: 13px; font-weight: 700;
+  transition: transform .35s var(--spring, ease-out), background .2s;
+}
+.spr-p:active { transform: scale(.96); }
+.spr-p .spr-av { width: 26px; height: 26px; font-size: 12px; margin: 0; }
+.spr-p.root { padding: 4px 13px 4px 4px; background: color-mix(in srgb, var(--g1) 22%, var(--glass-2)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--g1) 45%, transparent), 0 6px 18px -8px var(--grad-glow, transparent); }
+.spr-p.root .spr-av { width: 32px; height: 32px; font-size: 14px; box-shadow: 0 0 0 2px var(--g1); }
+.spr-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.spr-start { font-size: 11px; color: var(--sub); white-space: nowrap; }
+
+/* kind of hand-over on the branch */
+.spr-k {
+  display: inline-flex; align-items: center; gap: 3px; flex: none; height: 22px; padding: 0 8px 0 6px; border-radius: 999px;
+  font-size: 10.5px; font-weight: 700; white-space: nowrap; color: var(--kc); background: color-mix(in srgb, var(--kc) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--kc) 32%, transparent);
+}
+.spr-k svg { width: 12px; height: 12px; flex: none; }
+.k-thx { --kc: var(--g1); }
+.k-also { --kc: var(--g2); }
+.k-topic { --kc: var(--g3); }
+.spr-more { margin-top: 8px; font-size: 12px; color: var(--sub); }
+.spr-legend { position: relative; display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--line); font-size: 11px; color: var(--sub); }
+.spr-legend span { display: inline-flex; align-items: center; gap: 4px; }
+.spr-legend svg { width: 12px; height: 12px; color: var(--kc); }
+
+/* profile / my page: how far my recommendations reached */
+.spr-reach {
+  display: flex; align-items: center; gap: 12px; margin: 12px 0 4px; padding: 12px 14px; border-radius: 16px;
+  background: var(--frost-hi), var(--glass); border: 1px solid var(--frost-edge, var(--line));
+  animation: spr-in .5s var(--spring, ease-out) both;
+}
+.spr-reach-ic {
+  display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 12px;
+  background: var(--grad); color: var(--on-grad);
+}
+.spr-reach-ic svg { width: 20px; height: 20px; }
+.spr-reach-t { font-size: 14px; line-height: 1.5; }
+.spr-reach-t b { font-size: 16px; background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.spr-reach-s { font-size: 11px; color: var(--sub); margin-top: 2px; }
+
+@keyframes spr-in { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .spr-card, .spr-reach { animation: none; } }
