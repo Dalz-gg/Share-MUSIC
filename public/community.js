@@ -41,9 +41,9 @@ const Likes = {
     return j;
   },
   btn(kind, id, n, cls = '', thread = '') {
-    const on = this.has(kind, id);
-    return `<button class="likebtn ${on ? 'on' : ''} ${cls}" data-act="like" data-kind="${kind}" data-id="${esc(id)}" ${thread ? `data-thread="${esc(thread)}"` : ''} aria-pressed="${on}" aria-label="いいね">
-      <span class="heart">${on ? '♥' : '♡'}</span><span class="n">${n || 0}</span></button>`;
+    const on = this.has(kind, id), sasa = kind === 's' && window.Today?.icon?.get; // a recommended song's like is 「刺さった」 (today.js)
+    return `<button class="likebtn ${on ? 'on' : ''} ${sasa ? 'sasa' : ''} ${cls}" data-act="like" data-kind="${kind}" data-id="${esc(id)}" ${thread ? `data-thread="${esc(thread)}"` : ''} aria-pressed="${on}" aria-label="${sasa ? '刺さった' : 'いいね'}"${sasa ? ' title="刺さった"' : ''}>
+      <span class="heart">${sasa || (on ? '♥' : '♡')}</span><span class="n">${n || 0}</span></button>`;
   },
 };
 async function onLike(el) {
@@ -53,13 +53,14 @@ async function onLike(el) {
     const { liked, n } = await Likes.toggle(el.dataset.kind, el.dataset.id, el.dataset.thread);
     document.querySelectorAll(`.likebtn[data-kind="${el.dataset.kind}"][data-id="${CSS.escape(el.dataset.id)}"]`).forEach((b) => {
       b.classList.toggle('on', liked); b.setAttribute('aria-pressed', String(liked));
-      b.querySelector('.heart').textContent = liked ? '♥' : '♡'; b.querySelector('.n').textContent = n;
+      if (!b.classList.contains('sasa')) b.querySelector('.heart').textContent = liked ? '♥' : '♡'; b.querySelector('.n').textContent = n;
       if (liked) { b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); }
     });
     if (el.dataset.kind !== 'c') {
       const list = el.dataset.kind === 'p' ? Social.gallery : Songs.list;
       const key = el.dataset.kind === 'p' ? 'id' : 'sid';
       list?.forEach((x) => { if (x[key] === el.dataset.id) x.likes = n; });
+      if (el.dataset.kind === 's') window.Today?.synced?.(el.dataset.id, n);
     }
   } catch (e) { toast(e.message, 4000); }
   el.disabled = false;
