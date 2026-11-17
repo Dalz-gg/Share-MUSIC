@@ -1,1 +1,107 @@
-/* Stage 1 — 「ここを聴いて」(the best moment of a recommended song) + chorus preview + chorus estimation */
+/* Stage 1 — 「ここを聴いて」 / chorus preview (public/discover.js) */
+
+/* ---------- shared bits ---------- */
+.dsc-x { width: 34px; height: 34px; flex: none; display: grid; place-items: center; border: 0; border-radius: 999px; background: var(--glass); color: var(--sub); cursor: pointer; padding: 0; }
+.dsc-x svg { width: 16px; height: 16px; }
+.dsc-x:hover { background: var(--glass-2); color: var(--ink); }
+.dsc-k { font-size: 11px; font-weight: 700; letter-spacing: .12em; background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.dsc-time { font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums; color: var(--ink); background: var(--glass-2); border-radius: 999px; padding: 2px 9px; flex: none; }
+.dsc-mini { min-width: 44px; height: 32px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--glass); color: var(--ink); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; font-variant-numeric: tabular-nums; }
+.dsc-mini:active { transform: scale(.94); }
+.dsc-scene { display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: var(--glass-2); color: var(--ink); white-space: nowrap; border: 1px solid var(--line); }
+.dsc-scene::before { content: "#"; margin-right: 1px; color: var(--g1); }
+
+/* ---------- song page slot ---------- */
+.dsc-moment { margin: 18px 0 6px; padding: 18px 18px 16px; border-radius: 20px; background: var(--glass); border: 1px solid var(--line); position: relative; overflow: hidden; }
+.dsc-moment::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; background: linear-gradient(var(--g1), var(--g2), var(--g3)); opacity: .9; }
+.dsc-moment.noline { padding-top: 14px; }
+.dsc-line { margin: 6px 0 14px; font-size: clamp(20px, 5.6vw, 26px); font-weight: 900; line-height: 1.5; letter-spacing: .01em; color: var(--ink); word-break: break-word; }
+.dsc-line::before { content: "“"; margin-right: 2px; color: var(--g1); }
+.dsc-line::after { content: "”"; margin-left: 2px; color: var(--g2); }
+.dsc-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.dsc-listen { display: inline-flex; align-items: center; gap: 8px; padding: 0 18px; height: 44px; }
+.dsc-listen svg { width: 16px; height: 16px; }
+.dsc-listen em { font-style: normal; font-family: var(--mono); font-size: 12px; opacity: .8; }
+.dsc-listen em:empty { display: none; }
+.dsc-scenes { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.dsc-edit { margin-top: 12px; display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; color: var(--sub); font: inherit; font-size: 13px; padding: 4px 0; cursor: pointer; }
+.dsc-edit svg { width: 15px; height: 15px; }
+.dsc-edit:hover { color: var(--ink); }
+.dsc-editor { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line); display: grid; gap: 10px; }
+.dsc-lbl { font-size: 12px; color: var(--sub); }
+
+/* ---------- form parts (post form / editor) ---------- */
+.dsc-mf-btn { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; padding: 12px 14px; border-radius: 16px; border: 1px dashed color-mix(in srgb, var(--g1) 55%, var(--line)); background: color-mix(in srgb, var(--g1) 8%, var(--glass)); color: var(--ink); font: inherit; cursor: pointer; transition: transform .25s var(--spring, ease); }
+.dsc-mf-btn:active { transform: scale(.98); }
+.dsc-mf-btn b { display: block; font-size: 14px; }
+.dsc-mf-btn small { display: block; font-size: 12px; color: var(--sub); line-height: 1.5; margin-top: 2px; }
+.dsc-mf-ic { width: 38px; height: 38px; flex: none; border-radius: 12px; display: grid; place-items: center; background: var(--grad); color: var(--on-grad, #fff); }
+.dsc-mf-ic svg { width: 20px; height: 20px; }
+.dsc-mf-on { display: flex; align-items: center; gap: 8px; padding: 10px 8px 10px 12px; border-radius: 16px; background: var(--glass-2); border: 1px solid var(--line); }
+.dsc-mf-line { flex: 1; min-width: 0; font-weight: 700; font-size: 14px; line-height: 1.45; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.dsc-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.dsc-chip { border: 1px solid var(--line); background: var(--glass); color: var(--sub); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; transition: background .2s ease, color .2s ease, transform .25s var(--spring, ease); }
+.dsc-chip:active { transform: scale(.95); }
+.dsc-chip.on { background: var(--grad); color: var(--on-grad, #fff); border-color: transparent; }
+
+/* ---------- preview panel (sits right above the player dock, never over the video) ---------- */
+.dsc-pv { position: fixed; left: 0; right: 0; bottom: calc(var(--dock-h, 280px) - 2px); z-index: 29; max-width: 760px; margin: 0 auto; padding: 0 10px 6px; pointer-events: none; }
+body.has-tabbar .dsc-pv { bottom: calc(var(--dock-h, 280px) + var(--tabbar-h) - 2px); }
+.dsc-pv-card { animation: dscRise .35s cubic-bezier(.2,.8,.2,1) both; }
+.dsc-pv.out .dsc-pv-card { animation: dscFall .22s ease both; }
+.dsc-pv-card { pointer-events: auto; border-radius: 18px; padding: 10px 12px 10px; background: color-mix(in srgb, var(--card) 93%, transparent); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); border: 1px solid var(--line); box-shadow: 0 -10px 30px rgba(0,0,0,.3); }
+.dsc-pv-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.dsc-pv-head b { flex: 1; min-width: 0; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--sub); }
+.dsc-pv-head .dsc-x { width: 30px; height: 30px; }
+.dsc-pv-k { flex: none; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--glass-2); color: var(--ink); font-variant-numeric: tabular-nums; }
+.dsc-pv-k.pick { background: var(--grad); color: var(--on-grad, #fff); }
+.dsc-pv-ly { position: relative; height: 84px; overflow: hidden; margin: 6px 2px 4px; scroll-behavior: smooth; mask-image: linear-gradient(transparent, #000 26%, #000 74%, transparent); -webkit-mask-image: linear-gradient(transparent, #000 26%, #000 74%, transparent); }
+.dsc-pv-ly p { margin: 0; padding: 3px 0; font-size: 14px; line-height: 1.5; color: var(--sub); opacity: .5; transition: opacity .25s ease, color .25s ease; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dsc-pv-ly p.on { opacity: 1; color: var(--ink); font-weight: 700; font-size: 16px; }
+.dsc-pv-ly p.solo { white-space: normal; padding-top: 24px; text-align: center; }
+.dsc-pv-bar { height: 3px; border-radius: 3px; background: var(--rule); overflow: hidden; }
+.dsc-pv-bar i { display: block; height: 100%; width: 0; background: var(--grad); transition: width .2s linear; }
+.dsc-pv-foot { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+.dsc-pv-foot .dsc-mini { min-width: 38px; height: 30px; padding: 0 8px; }
+.dsc-adj { font-size: 11px; color: var(--sub); min-width: 46px; text-align: center; font-variant-numeric: tabular-nums; }
+.dsc-pv-foot .spacer { flex: 1; }
+body.dsc-pv-open.has-player { padding-bottom: calc(var(--dock-h, 440px) + 190px); }
+body.dsc-pv-open.has-tabbar.has-player { padding-bottom: calc(var(--dock-h, 440px) + var(--tabbar-h) + 190px); }
+@keyframes dscRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes dscFall { to { opacity: 0; transform: translateY(14px); } }
+
+/* ---------- pickMoment modal ---------- */
+.dsc-pick { position: fixed; inset: 0; z-index: 70; display: grid; align-items: end; justify-items: center; }
+.dsc-pick-bg { position: absolute; inset: 0; background: rgba(8,8,12,.55); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); opacity: 0; transition: opacity .25s ease; }
+.dsc-pick.on .dsc-pick-bg { opacity: 1; }
+.dsc-pick-card { position: relative; width: min(560px, 100%); max-height: calc(100dvh - 24px); display: flex; flex-direction: column; gap: 10px; padding: 14px 16px max(14px, env(safe-area-inset-bottom)); border-radius: 22px 22px 0 0; background: color-mix(in srgb, var(--card) 92%, transparent); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4); border: 1px solid var(--line); border-bottom: 0; box-shadow: 0 -20px 50px rgba(0,0,0,.4); transform: translateY(40px); opacity: 0; transition: transform .4s var(--spring, cubic-bezier(.2,.8,.2,1)), opacity .25s ease; }
+.dsc-pick.on .dsc-pick-card { transform: none; opacity: 1; }
+@media (min-width: 640px) { .dsc-pick { align-items: center; } .dsc-pick-card { border-radius: 22px; border-bottom: 1px solid var(--line); } }
+.dsc-pick-head { display: flex; align-items: flex-start; gap: 10px; }
+.dsc-pick-head > div { flex: 1; }
+.dsc-pick-head b { display: block; font-size: 17px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
+.dsc-pick-head span { display: block; font-size: 12px; color: var(--sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dsc-pick-video { flex: none; width: 100%; height: 200px; border-radius: 12px; overflow: hidden; background: #000; }
+.dsc-pick-video iframe, .dsc-pick-video > div { width: 100%; height: 100%; display: block; }
+.dsc-pick-sel { flex: none; }
+.dsc-pk-now { display: flex; align-items: center; gap: 8px; }
+.dsc-pk-now .dsc-mf-line { font-size: 15px; }
+.dsc-pk-tools { display: flex; gap: 6px; margin-top: 8px; align-items: center; }
+.dsc-pk-tools .btn { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; }
+.dsc-pk-tools .btn svg { width: 13px; height: 13px; }
+.dsc-pk-empty { font-size: 13px; color: var(--sub); padding: 4px 2px; }
+.dsc-pick-body { position: relative; flex: 1; min-height: 120px; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 8px; }
+.dsc-pick-tip { font-size: 12px; color: var(--sub); }
+.dsc-pick-lines { display: grid; gap: 2px; position: relative; }
+.dsc-pk-line { display: flex; gap: 10px; align-items: baseline; text-align: left; border: 0; border-radius: 12px; padding: 8px 10px; background: transparent; color: var(--sub); font: inherit; cursor: pointer; transition: background .2s ease, color .2s ease; }
+.dsc-pk-line .tm { flex: none; font-family: var(--mono); font-size: 11px; opacity: .7; width: 34px; }
+.dsc-pk-line .tx { font-size: 15px; line-height: 1.5; }
+.dsc-pk-line:hover { background: var(--glass); color: var(--ink); }
+.dsc-pk-line.on { color: var(--ink); }
+.dsc-pk-line.sel { background: color-mix(in srgb, var(--g1) 18%, var(--glass-2)); color: var(--ink); font-weight: 700; box-shadow: inset 3px 0 0 var(--g1); }
+.dsc-pk-slider { display: flex; align-items: center; gap: 10px; }
+.dsc-pk-plain summary { cursor: pointer; font-size: 13px; color: var(--sub); padding: 4px 0; }
+.dsc-pk-plain button { display: block; width: 100%; text-align: left; border: 0; background: none; color: var(--ink); font: inherit; font-size: 14px; padding: 6px 4px; border-radius: 8px; cursor: pointer; }
+.dsc-pk-plain button:hover { background: var(--glass); }
+.dsc-pick-foot { flex: none; display: flex; gap: 8px; justify-content: flex-end; padding-top: 4px; }
+.dsc-pick-foot .btn:disabled { opacity: .45; }
