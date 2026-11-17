@@ -410,7 +410,8 @@ const Notifs = {
       react: `${who}があなたの投稿に ${RX_ICON[n.r] || '♥'} しました${n.title ? `（「${esc(n.title.slice(0, 30))}」）` : ''}`,
     }[n.t] || Hooks.notif[n.t]?.(n, who, t) || '';
     const to = Hooks.notifLink[n.t]?.(n) || (n.t === 'follow' ? `/u/${n.fromId}` : n.kind === 'm' ? `/c/${n.id}` : n.kind === 's' ? `/s/${n.id}` : `/p/${n.id}`);
-    const icon = n.t === 'like' ? '<span class="ni like">♥</span>' : Avatars.html(n.fromId, n.from, 'ni');
+    const sys = { topic: ICON.topic, spread: ICON.tree }[n.t];
+    const icon = n.t === 'like' ? '<span class="ni like">♥</span>' : sys && !n.fromId ? `<span class="ni like sys">${sys}</span>` : Avatars.html(n.fromId, n.from, 'ni');
     return `<button class="nrow ${isNew ? 'new' : ''}" data-act="go" data-to="${esc(to)}">${icon}
       <span class="nbody"><span class="nmsg">${msg}</span>${n.text ? `<span class="ntext">${esc(n.text)}</span>` : ''}<span class="ntime">${ago(n.at)}</span></span></button>`;
   },
