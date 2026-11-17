@@ -13,6 +13,20 @@ const CONFIG = window.PB_CONFIG || {};
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const pad2 = (n) => String(n).padStart(2, '0');
+/* =========================================================
+ * Extension hooks: feature modules (discover.js, today.js, topics.js, spread.js ...) plug in here
+ * instead of editing this file. Each module pushes functions into these lists.
+ * ======================================================= */
+const Hooks = {
+  routes: [],   // fn(path, hash) -> true if the module rendered the page
+  actions: [],  // fn(act, el, ev) -> true if the module handled the click
+  notif: {},    // type -> fn(n, who, t) -> message HTML for the notifications page
+  notifLink: {},// type -> fn(n) -> URL to open
+  song: [],     // fn(so, view) after the recommended-song page is drawn (slots: #song-moment, #song-reacts, #song-spread)
+  profile: [],  // fn(id, { isMe }) after a profile / my page is drawn (slot: #prof-extra)
+  home: [],     // fn() after home is drawn
+  renderHome: null, // a module may replace the whole home page: fn() -> void
+};
 const store = {
   get(k, d = null) { try { const v = localStorage.getItem('ps.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) { try { localStorage.setItem('ps.' + k, JSON.stringify(v)); } catch { /* ignore */ } },
@@ -393,8 +407,8 @@ const Notifs = {
       thread: `${who}が、あなたも返信した投稿に返信しました`,
       quote: `${who}があなたの投稿を引用しました`,
       react: `${who}があなたの投稿に ${RX_ICON[n.r] || '♥'} しました${n.title ? `（「${esc(n.title.slice(0, 30))}」）` : ''}`,
-    }[n.t] || '';
-    const to = n.t === 'follow' ? `/u/${n.fromId}` : n.kind === 'm' ? `/c/${n.id}` : n.kind === 's' ? `/s/${n.id}` : `/p/${n.id}`;
+    }[n.t] || Hooks.notif[n.t]?.(n, who, t) || '';
+    const to = Hooks.notifLink[n.t]?.(n) || (n.t === 'follow' ? `/u/${n.fromId}` : n.kind === 'm' ? `/c/${n.id}` : n.kind === 's' ? `/s/${n.id}` : `/p/${n.id}`);
     const icon = n.t === 'like' ? '<span class="ni like">♥</span>' : Avatars.html(n.fromId, n.from, 'ni');
     return `<button class="nrow ${isNew ? 'new' : ''}" data-act="go" data-to="${esc(to)}">${icon}
       <span class="nbody"><span class="nmsg">${msg}</span>${n.text ? `<span class="ntext">${esc(n.text)}</span>` : ''}<span class="ntime">${ago(n.at)}</span></span></button>`;
@@ -548,6 +562,7 @@ function route() {
   ShareSheet.close();
   renderTabbar();
   Notifs.poll();
+  for (const fn of Hooks.routes) { try { if (fn(location.pathname, location.hash)) return; } catch (e) { console.error(e); } }
   const m = /^\/p\/([\w-]{10,})/.exec(location.pathname);
   if (m) return renderViewer(m[1]);
   const sm = /^\/s\/([\w-]{6,40})/.exec(location.pathname);
@@ -607,6 +622,7 @@ function errText(e) {
  * Home: everyone's playlists + recommended songs
  * ======================================================= */
 function renderHome() {
+  if (Hooks.renderHome) return Hooks.renderHome();
   document.title = 'Share MUSIC';
   const on = Api.connected();
   const rec = Recent.list();
@@ -624,6 +640,7 @@ function renderHome() {
     ${rec.length ? `<details class="recent"><summary>履歴（${rec.length}）</summary>${Recent.html()}</details>` : ''}
   `);
   Promise.all([Social.loadGallery(), Songs.load(), Api.connected() ? Follows.load() : null, partyList().then((l) => { Parties.live = l; })]).then(() => { drawFeature(); drawShelves(); });
+  for (const fn of Hooks.home) { try { fn(); } catch (e) { console.error(e); } }
 }
 const Parties = { live: null };
 /** big swipeable "pick up" cards at the top of home (most-liked playlists) */
@@ -818,6 +835,7 @@ async function renderProfile(id) {
     </div>
     <div class="bio-box" id="bio-box"></div>
     <div id="prof-own"></div>
+    <div id="prof-extra"></div>
     <div class="label"><b>◎</b> 共有しているプレイリスト</div>
     ${Social.grid(mine, 'まだ共有しているプレイリストはありません。', { owner: false })}
     <div class="label"><b>♪</b> おすすめ曲</div>
@@ -827,6 +845,7 @@ async function renderProfile(id) {
     <div class="row" style="margin-top:24px"><button class="btn quiet sm" data-act="go" data-to="/">← トップへ</button></div>
   `);
   Bio.mount(id, false);
+  for (const fn of Hooks.profile) { try { fn(id, { isMe: false }); } catch (e) { console.error(e); } }
   Posts.get('/api/posts?by=' + encodeURIComponent(id)).then((j) => {
     const el = $('#prof-posts'); if (!el || location.pathname !== '/u/' + id) return;
     Posts.remember(j.items);
@@ -879,11 +898,13 @@ function renderMe() {
       ${pr.id ? `<a class="btn sm" href="/u/${esc(pr.id)}" data-act="go" data-to="/u/${esc(pr.id)}">公開プロフィールを見る</a>` : ''}
     </div>
     <div class="bio-box" id="bio-box"></div>
+    <div id="prof-extra"></div>
     <div class="metabs scroll" role="tablist">${tabs.map(([k, l]) => `<button role="tab" class="${tab === k ? 'on' : ''}" data-act="me-tab" data-tab="${k}">${l}</button>`).join('')}</div>
     <div id="me-body"></div>
   `);
   drawMeTab();
   loadMyStats();
+  if (pr.id) for (const fn of Hooks.profile) { try { fn(pr.id, { isMe: true }); } catch (e) { console.error(e); } }
   Bio.mount(pr.id, true);
   if (!pr.id) Api.myId().then((id) => { if (id && location.pathname === '/me') renderMe(); });
 }
@@ -1236,6 +1257,7 @@ function drawSong() {
       <span class="spacer"></span><span id="song-owner"></span>
     </div>
     <div id="song-edit"></div>
+    <div id="song-moment"></div><div id="song-reacts"></div>
     ${so.desc ? `<div class="intro">${esc(so.desc)}</div>` : ''}
     ${(so.also || []).some((x) => x.desc) ? `<div class="label"><b>♪</b> みんなのおすすめポイント</div><div class="alsonotes">${(so.also || []).filter((x) => x.desc).map((x) => `<div class="alsonote">${Avatars.chip(x.id, x.name)}<p>${esc(x.desc)}</p></div>`).join('')}</div>` : ''}
     <a class="btn accent ytm-open" href="https://music.youtube.com/watch?v=${esc(so.videoId)}" target="_blank" rel="noopener">YouTube Music で開く ${ICON.ext}</a>
@@ -1246,6 +1268,8 @@ function drawSong() {
   `);
   if (Player.idx >= 0) { Deck.setTrack(tracks[Player.idx]); Deck.setPlaying(Player.playing); Player.tick(); }
   Comments.mount('s', so.sid, true);
+  $('#comments')?.insertAdjacentHTML('afterend', '<div id="song-spread"></div>');
+  for (const fn of Hooks.song) { try { fn(so, S.view); } catch (e) { console.error(e); } }
   Recent.add({ id: so.sid, title: so.title, owner: so.artist, image: so.art || so.thumb }, 's');
   const view = S.view;
   const alsoBtn = (joined) => `<button class="btn sm ${joined ? '' : 'solid'} alsobtn" data-act="also" data-joined="${joined ? 1 : 0}">${joined ? '✓ あなたもおすすめ中' : '＋ 私もおすすめ'}</button>`;
@@ -1918,7 +1942,7 @@ document.addEventListener('click', async (ev) => {
     case 'copy-start': copyStart(); break;
     case 'copy-resume': runCopy(); break;
     case 'copy-cancel': store.del('copyjob'); route(); break;
-    default: if (!postAction(el.dataset.act, el, ev)) partyAction(el.dataset.act, el);
+    default: if (!postAction(el.dataset.act, el, ev) && !partyAction(el.dataset.act, el)) Hooks.actions.some((fn) => fn(el.dataset.act, el, ev));
   }
 });
 // close little popovers (reaction picker, post menu) when tapping elsewhere

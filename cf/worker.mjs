@@ -10,10 +10,13 @@ import auth from '../netlify/functions/auth.mjs';
 import social from '../netlify/functions/social.mjs';
 import posts from '../netlify/functions/posts.mjs';
 import party from '../netlify/functions/party.mjs';
+import spread from '../netlify/functions/spread.mjs';
+import reactions from '../netlify/functions/reactions.mjs';
+import topics from '../netlify/functions/topics.mjs';
 import { ASSETS as EMBEDDED } from './static-server.mjs';
 
 const ROUTES = [
-  [(p) => p.startsWith('/p/') || p.startsWith('/s/') || p === '/c' || p.startsWith('/c/') || p === '/party' || p.startsWith('/party/') || p.startsWith('/u/') || p === '/search', og],
+  [(p) => p.startsWith('/p/') || p.startsWith('/s/') || p === '/c' || p.startsWith('/c/') || p === '/party' || p.startsWith('/party/') || p === '/topic' || p.startsWith('/topic/') || p.startsWith('/u/') || p === '/search', og],
   [(p) => p === '/api/mv' || p === '/api/ja', api],
   [(p) => p === '/api/cover' || p === '/api/cover-info', cover],
   [(p) => p === '/api/gallery' || p === '/api/gallery-status' || p === '/api/bookmarks', gallery],
@@ -22,6 +25,9 @@ const ROUTES = [
   [(p) => ['/api/notifs', '/api/notifs/read', '/api/follows', '/api/report'].includes(p), social],
   [(p) => ['/api/posts', '/api/post', '/api/post-react', '/api/post-vote', '/api/post-img', '/api/pimg'].includes(p), posts],
   [(p) => ['/api/parties', '/api/party', '/api/party-join', '/api/party-ctl', '/api/party-chat'].includes(p), party],
+  [(p) => p === '/api/spread', spread],
+  [(p) => p === '/api/song-react' || p === '/api/song-reacts', reactions],
+  [(p) => ['/api/topic', '/api/topics', '/api/topic-admin'].includes(p), topics],
 ];
 const SPA = (p) => p === '/me' || p === '/search' || p === '/bookmarks' || p === '/share' || p.startsWith('/share/') || p === '/notifs' || p === '/c' || p.startsWith('/c/') || p === '/party' || p.startsWith('/party/') || p === '/admin' || p.startsWith('/u/');
 const CACHEABLE = (p) => p.startsWith('/p/') || p.startsWith('/s/') || p.startsWith('/c/') || p.startsWith('/party/') || p.startsWith('/u/') || ['/api/mv', '/api/ja', '/api/song-search', '/api/song-match', '/api/gallery', '/api/songs', '/api/cover-info'].includes(p);
