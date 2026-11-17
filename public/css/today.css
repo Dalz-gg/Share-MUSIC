@@ -1,1 +1,138 @@
 /* Stage 2 — Home "今日のおすすめ" + song reactions (刺さった / わかる / ありがとう) + ありがとう便 */
+
+/* ---------- home ---------- */
+.tdy { margin-top: 6px; }
+.tdy-head { margin: 4px 2px 14px; }
+.tdy-title { font-family: var(--display); font-size: 28px; font-weight: 900; line-height: 1.2; margin: 6px 0 4px; letter-spacing: .02em;
+  background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.tdy-sub { margin: 0; font-size: 12.5px; color: var(--sub); }
+.tdy-list { display: grid; gap: 14px; }
+/* the songs shelf of the old home is the list above now */
+.tdy-home .shelf:has([data-act="see-all"][data-tab="song"]) { display: none; }
+
+.tdy-card { position: relative; border-radius: 22px; overflow: hidden; isolation: isolate;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--g2) 12%, transparent), transparent 55%), var(--glass);
+  border: 1px solid var(--frost-edge, rgba(255,255,255,.09));
+  box-shadow: inset 0 1px 0 var(--frost-hi, rgba(255,255,255,.08)), 0 10px 28px rgba(0,0,0,.22);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  animation: tdyIn .55s var(--spring, cubic-bezier(.25,1.4,.45,1)) both; animation-delay: calc(var(--i, 0) * 45ms); }
+@keyframes tdyIn { from { opacity: 0; transform: translateY(14px) scale(.98); } }
+.tdy-card.now { border-color: color-mix(in srgb, var(--g1) 60%, transparent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--g1) 40%, transparent), 0 12px 34px var(--grad-glow, rgba(133,114,214,.3)); }
+
+.tdy-body { display: grid; grid-template-columns: 92px 1fr; gap: 14px; align-items: center; width: 100%; padding: 14px 14px 10px; border: 0; background: none;
+  color: var(--ink); text-align: left; font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: transform .28s var(--spring, ease); }
+.tdy-body:active { transform: scale(.975); transition-duration: .08s; }
+.tdy-art { position: relative; width: 92px; height: 92px; border-radius: 14px; overflow: hidden; background: var(--card); box-shadow: 0 6px 18px rgba(0,0,0,.35); }
+.tdy-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tdy-art img.lb { transform: scale(1.34); }
+.tdy-pbtn { position: absolute; right: 6px; bottom: 6px; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+  background: color-mix(in srgb, #fff 88%, transparent); color: #121216; box-shadow: 0 4px 12px rgba(0,0,0,.35);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); transition: transform .3s var(--spring, ease); }
+.tdy-pbtn svg { width: 14px; height: 14px; margin-left: 2px; }
+.tdy-body:hover .tdy-pbtn { transform: scale(1.08); }
+.tdy-card.now .tdy-pbtn { background: var(--grad); color: var(--on-grad, #fff); }
+
+.tdy-q { min-width: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; overflow-wrap: anywhere; }
+.tdy-q.line { font-family: var(--display); font-weight: 900; font-size: 19px; line-height: 1.5; letter-spacing: .01em; }
+.tdy-q.line::before { content: "\201C"; display: block; height: 14px; margin-bottom: 2px; font-size: 30px; line-height: 1; font-weight: 900;
+  background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.tdy-q.memo { font-weight: 700; font-size: 15px; line-height: 1.65; color: var(--ink); }
+.tdy-q.title { font-family: var(--display); font-weight: 900; font-size: 18px; line-height: 1.45; }
+
+.tdy-foot { padding: 0 14px 12px; display: grid; gap: 8px; }
+.tdy-song { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; padding: 8px 10px; border-radius: 12px; border: 0; cursor: pointer;
+  background: var(--glass); color: var(--ink); font: inherit; text-align: left; transition: transform .28s var(--spring, ease), background-color .2s ease; }
+.tdy-song:hover { background: var(--glass-2); }
+.tdy-song:active { transform: scale(.97); transition-duration: .08s; }
+.tdy-st { flex: 1; min-width: 0; display: grid; }
+.tdy-st b, .tdy-st small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tdy-st b { font-size: 14px; }
+.tdy-st small { font-size: 12px; color: var(--sub); }
+.tdy-chev { flex: none; color: var(--sub); display: grid; }
+.tdy-chev svg { width: 18px; height: 18px; }
+.tdy-scenes { display: flex; flex-wrap: wrap; gap: 6px; }
+.tdy-scene { font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 999px; color: var(--ink);
+  background: color-mix(in srgb, var(--g3) 16%, transparent); border: 1px solid color-mix(in srgb, var(--g3) 34%, transparent); }
+.tdy-meta { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 12px; color: var(--sub); }
+.tdy-by { display: inline-flex; align-items: center; gap: 6px; min-width: 0; flex: 1; font-weight: 700; }
+.tdy-byn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tdy-ago { flex: none; font-size: 11px; }
+
+.tdy-morebtn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 14px; padding: 12px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--glass); color: var(--ink); font: inherit; font-weight: 700; font-size: 14px; cursor: pointer;
+  transition: transform .28s var(--spring, ease), background-color .2s ease; }
+.tdy-morebtn:hover { background: var(--glass-2); }
+.tdy-morebtn:active { transform: scale(.96); transition-duration: .08s; }
+.tdy-morebtn .n { font-size: 12px; color: var(--sub); font-weight: 500; }
+.tdy-morebtn[hidden] { display: none; }
+
+.tdy-empty { display: grid; justify-items: center; gap: 8px; text-align: center; padding: 30px 18px; border-radius: 22px; background: var(--glass); }
+.tdy-empty span { font-size: 13px; color: var(--sub); }
+.tdy-empty-ic { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; background: var(--glass-2); color: var(--ink); }
+.tdy-empty-ic svg { width: 22px; height: 22px; }
+.tdy-login { display: flex; align-items: center; gap: 12px; margin-top: 18px; padding: 12px 14px; border-radius: 16px; background: var(--glass); font-size: 12.5px; color: var(--sub); }
+.tdy-login span { flex: 1; }
+.tdy-login .btn { flex: none; }
+
+/* ---------- reaction buttons ---------- */
+.tdy-rx { display: flex; gap: 6px; }
+.tdy-rb { position: relative; display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px 5px 9px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--glass); color: var(--sub); font: inherit; font-family: var(--mono); font-size: 12.5px; font-weight: 600;
+  -webkit-tap-highlight-color: transparent; transition: transform .3s var(--spring, ease), background-color .2s ease, color .2s ease, border-color .2s ease; }
+.tdy-rb .ic { display: grid; }
+.tdy-rb svg { width: 17px; height: 17px; }
+.tdy-rb .l { font-family: var(--body); font-weight: 700; font-size: 13px; }
+.tdy-rb:hover { color: var(--ink); background: var(--glass-2); }
+.tdy-rb:active { transform: scale(.9); transition-duration: .08s; }
+.tdy-rb:disabled { cursor: progress; }
+.tdy-rb.on { color: var(--ink); border-color: transparent; }
+.tdy-rb.k-get.on { background: color-mix(in srgb, var(--g1) 30%, transparent); }
+.tdy-rb.k-get.on .ic { color: var(--g1); }
+.tdy-rb.k-wkr.on { background: color-mix(in srgb, var(--g2) 32%, transparent); }
+.tdy-rb.k-wkr.on .ic { color: color-mix(in srgb, var(--g2) 70%, #fff); }
+.tdy-rb.k-thx.on { background: color-mix(in srgb, var(--g3) 28%, transparent); }
+.tdy-rb.k-thx.on .ic { color: var(--g3); }
+.tdy-rb.on svg { fill: color-mix(in srgb, currentColor 22%, transparent); }
+.tdy-rb.pop .ic { animation: tdyPop .6s var(--spring, cubic-bezier(.25,1.4,.45,1)); }
+.tdy-rb.pop::after { content: ""; position: absolute; inset: -2px; border-radius: inherit; pointer-events: none; border: 2px solid currentColor; opacity: 0;
+  animation: tdyRing .55s var(--ease-out, ease-out); }
+.tdy-rb.k-get.pop::after { color: var(--g1); } .tdy-rb.k-wkr.pop::after { color: var(--g2); } .tdy-rb.k-thx.pop::after { color: var(--g3); }
+@keyframes tdyPop { 0% { transform: scale(1); } 30% { transform: scale(.7) rotate(-8deg); } 65% { transform: scale(1.35) rotate(4deg); } 100% { transform: scale(1); } }
+@keyframes tdyRing { 0% { opacity: .7; transform: scale(.9); } 100% { opacity: 0; transform: scale(1.25); } }
+.tdy-rb.k-thx.pop .ic { animation: tdyFly .7s var(--spring, cubic-bezier(.25,1.4,.45,1)); }
+@keyframes tdyFly { 0% { transform: none; } 35% { transform: translate(3px, -5px) rotate(-12deg) scale(1.15); } 70% { transform: translate(-1px, 1px) scale(1.2); } 100% { transform: none; } }
+
+/* song page: bigger, with words */
+.tdy-srx { margin: 14px 0 6px; }
+.tdy-rx.lg { gap: 8px; }
+.tdy-rx.lg .tdy-rb { flex: 1; min-width: 0; justify-content: center; padding: 11px 4px; border-radius: 16px; gap: 4px; white-space: nowrap; }
+.tdy-rx.lg .tdy-rb .l { font-size: 12.5px; }
+.tdy-rx.lg .tdy-rb svg { width: 20px; height: 20px; }
+.tdy-rx.lg .tdy-rb .n { font-size: 12px; opacity: .85; }
+.tdy-rb.self { opacity: .75; }
+.tdy-srx-h { margin-top: 7px; font-size: 11.5px; color: var(--sub); text-align: center; }
+
+/* the old like on recommended songs is 刺さった now */
+.likebtn.sasa .heart { display: grid; color: var(--g1); }
+.likebtn.sasa .heart svg { width: 15px; height: 15px; }
+.likebtn.sasa.on { background: color-mix(in srgb, var(--g1) 30%, transparent); color: var(--ink); }
+.likebtn.sasa.on .heart { color: var(--g1); }
+.likebtn.sasa.pop .heart { animation: tdyPop .6s var(--spring, ease); }
+
+/* ---------- profile: ありがとうをもらった数 ---------- */
+.tdy-thx { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; margin: 12px 0; padding: 12px 16px; border-radius: 18px;
+  background: linear-gradient(120deg, color-mix(in srgb, var(--g3) 16%, transparent), color-mix(in srgb, var(--g2) 10%, transparent)), var(--glass);
+  border: 1px solid var(--frost-edge, rgba(255,255,255,.08)); animation: tdyIn .5s var(--spring, ease) both; }
+.tdy-thx[hidden] { display: none; }
+.tdy-thx .ic { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--glass-2); color: var(--g3); }
+.tdy-thx .ic svg { width: 19px; height: 19px; }
+.tdy-thx .t { display: flex; align-items: baseline; gap: 8px; }
+.tdy-thx .t b { font-family: var(--mono); font-size: 22px; }
+.tdy-thx .t span { font-size: 13px; font-weight: 700; }
+.tdy-thx .h { flex-basis: 100%; font-size: 11.5px; color: var(--sub); padding-left: 48px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tdy-card, .tdy-thx { animation: none; }
+  .tdy-rb.pop .ic, .tdy-rb.pop::after, .likebtn.sasa.pop .heart { animation: none; }
+}
