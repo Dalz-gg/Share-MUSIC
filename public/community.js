@@ -446,6 +446,8 @@ const Admin = {
           <button class="btn sm" data-act="adm" data-target="user" data-id="${esc(x.id)}" data-name="${esc(x.name)}" data-op="hideall">投稿をすべて非公開</button>
           ${x.banned ? `<button class="btn sm" data-act="adm" data-target="user" data-id="${esc(x.id)}" data-name="${esc(x.name)}" data-op="unban">利用停止を解除</button>`
             : `<button class="btn sm quiet danger" data-act="adm" data-target="user" data-id="${esc(x.id)}" data-name="${esc(x.name)}" data-op="ban">利用停止</button>`}</div></div>`).join('') : '<div class="adm-empty">まだ利用者はいません</div>';
+    } else if (tab === 'tpc') {
+      body = '<div id="adm-topic"></div>'; // 今週のお題 (topics.js)
     } else if (tab === 'log') {
       const OP = { hide: '非公開', show: '公開に戻す', delete: '削除', ban: '利用停止', unban: '利用停止を解除', hideall: 'すべて非公開', resolve: '通報を対応済み' };
       const TG = { playlist: 'プレイリスト', song: 'おすすめ曲', comment: 'コメント', post: 'つぶやき', report: '通報', user: 'ユーザー' };
@@ -462,7 +464,7 @@ const Admin = {
       </div>
       <div class="adm-sub tiny muted">非公開中 ${hidCount}件 ・ 利用停止中 ${users.filter((x) => x.banned).length}人 ・ <button class="linkbtn" data-act="adm-tab" data-tab="log">操作履歴を見る</button></div>
       <div class="adm-bar">
-        <div class="adm-tabs">${[['rep', '通報'], ['post', 'つぶやき'], ['pl', 'プレイリスト'], ['song', 'おすすめ曲'], ['cmt', 'コメント'], ['user', 'ユーザー'], ['log', '操作履歴']].map(([k, l]) => `<button class="${tab === k ? 'on' : ''}" data-act="adm-tab" data-tab="${k}">${l}${k === 'rep' && groups.length ? `<i>${groups.length}</i>` : ''}</button>`).join('')}</div>
+        <div class="adm-tabs">${[['rep', '通報'], ['post', 'つぶやき'], ['pl', 'プレイリスト'], ['song', 'おすすめ曲'], ['cmt', 'コメント'], ['user', 'ユーザー'], ['tpc', 'お題'], ['log', '操作履歴']].map(([k, l]) => `<button class="${tab === k ? 'on' : ''}" data-act="adm-tab" data-tab="${k}">${l}${k === 'rep' && groups.length ? `<i>${groups.length}</i>` : ''}</button>`).join('')}</div>
         <input class="input" id="adm-q" type="search" placeholder="この一覧をしぼり込む（名前・文章・タイトル）" value="${esc(this.q || '')}">
       </div>
       <div class="hint">「非公開」はみんなに見えなくなるだけで、あとで戻せます。「削除」は元に戻せません。非公開・削除すると、その対象への通報は自動で対応済みになります。</div>
@@ -470,6 +472,7 @@ const Admin = {
     const q = $('#adm-q');
     const filter = () => { const k = (this.q = q.value).normalize('NFKC').toLowerCase().trim(); document.querySelectorAll('#adm-list .admrow').forEach((r) => { r.hidden = !!k && !r.textContent.normalize('NFKC').toLowerCase().includes(k); }); };
     q.addEventListener('input', filter); filter();
+    if (tab === 'tpc') window.Topics?.adminDraw?.($('#adm-topic'), this.token);
   },
   /** reports about the same thing are shown together, most-reported first */
   groupReports(reports, { pls, songs, posts, allComments }) {
