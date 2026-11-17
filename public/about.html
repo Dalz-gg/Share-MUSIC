@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>このアプリについて | Share MUSIC</title>
-  <meta name="description" content="Share MUSIC は、YouTube Music のプレイリストやおすすめの曲を共有して、みんなで聴いて、いいねし合えるウェブアプリです。">
+  <meta name="description" content="Share MUSIC は、人のおすすめで新しい曲と出会い、好きな曲をおすすめして、共感し合うためのウェブアプリです。">
   <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,17 +28,21 @@
   <div class="stripes" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
   <main class="wrap doc">
     <h1>Share MUSIC について</h1>
-    <p>Share MUSIC は、<b>YouTube Music のプレイリストやおすすめの1曲を共有して、みんなで聴いて、いいねし合える</b>無料のウェブアプリです。個人（Dalz）が運営しています。</p>
+    <p class="date">出会う・おすすめする・共感する</p>
+    <p>Share MUSIC は、<b>人のおすすめで新しい曲と出会い、大好きな曲をおすすめして、共感し合う</b>ための無料のウェブアプリです。友だちや知り合いどうしで使うことを想定して、個人（Dalz）が運営しています。聴くのはいつもの音楽アプリで。ここは「この曲いいよ」を手渡すための場所です。</p>
     <h2>できること</h2>
     <ul>
-      <li>みんなが共有したプレイリストやおすすめ曲を、ジャンルや人気順でさがして、その場で試聴する（ログイン不要）</li>
-      <li>いいね・コメント（ログイン不要）、ブックマーク・フォロー・お知らせ（ログインが必要）</li>
-      <li>自分の YouTube Music のプレイリストに、タイトル・紹介文・ジャンル・カバー画像を付けて共有する</li>
-      <li>好きな曲を検索して、紹介文を添えて「おすすめ曲」として投稿する</li>
-      <li>気に入ったプレイリストを、自分の YouTube アカウントにコピーする</li>
+      <li><b>今日のおすすめ</b>：みんなの新しいおすすめが、ジャケット・「刺さった一行」・場面タグといっしょに並びます。タップするとその場で約20秒試聴できます（ログイン不要）</li>
+      <li><b>おすすめする＋ここを聴いて</b>：好きな1曲を選んで、いちばん聴いてほしい瞬間（刺さった一行）と場面・ひとことを添えて投稿します</li>
+      <li><b>刺さった・わかる・ありがとう</b>：意味のちがう3つのリアクション。「ありがとう」はおすすめした人に届きます</li>
+      <li><b>布教の木</b>：あなたのおすすめが、誰から誰へ、どこまで届いたかを木の形で見られます</li>
+      <li><b>今週のお題</b>：毎週のお題に1人1曲で答えて、みんなの答えを聴けます</li>
+      <li><b>コミュニティ</b>：つぶやき・ミックステープ・写真・曲バトル</li>
+      <li><b>聴く</b>：YouTube Music のプレイリストの共有、リスニングパーティー（同じ曲をみんなで同時に聴いてチャット）、自分の YouTube アカウントへのプレイリストのコピー</li>
     </ul>
+    <p>くわしい使い方は <a href="/#help">使い方</a> のページをご覧ください。</p>
     <h2>Google アカウント（YouTube）の利用について</h2>
-    <p>見る・聴く・いいね・コメントはログインなしで使えます。共有・投稿・コピーなどをするときだけ Google アカウントでログインし、YouTube へのアクセス（<code>https://www.googleapis.com/auth/youtube</code>）を許可していただきます。この許可は、あなたが操作したときに次のことをするためだけに使います。</p>
+    <p>見る・試聴する・コメントはログインなしで使えます。おすすめの投稿・リアクション・お題への回答・共有・コピーなどをするときだけ Google アカウントでログインし、YouTube へのアクセス（<code>https://www.googleapis.com/auth/youtube</code>）を許可していただきます。この許可は、あなたが操作したときに次のことをするためだけに使います。</p>
     <ul>
       <li>あなたのチャンネル名・アイコンの表示と、本人であることの確認</li>
       <li>あなたのプレイリストの一覧と曲目の読み込み</li>
@@ -50,8 +54,13 @@
     <p style="margin-top:22px"><a class="btn solid" href="/" style="color:var(--on-grad)">Share MUSIC を開く</a></p>
 
     <h2 id="en">About Share MUSIC (English)</h2>
-    <p><b>Share MUSIC</b> is a free web app, run by an individual (Dalz), for sharing YouTube Music playlists and favourite songs, listening to them together, and liking and commenting on them.</p>
+    <p><b>Share MUSIC</b> is a free web app, run by an individual (Dalz), for discovering new songs through friends' recommendations, recommending the songs you love, and connecting over them.</p>
     <ul>
+      <li>Today's picks: browse new recommendations with the lyric line that moved the recommender, and preview about 20 seconds from that moment.</li>
+      <li>Recommend a song with the moment you want people to hear ("listen here"), a scene tag and a short note.</li>
+      <li>React with 刺さった ("it hit me"), わかる ("I feel it") or ありがとう ("thank you" — sent to the recommender), and see how a recommendation spread from person to person.</li>
+      <li>Answer the weekly topic with one song.</li>
+      <li>Hold listening parties to hear the same song at the same moment with chat.</li>
       <li>Browse playlists and recommended songs shared by others, filter them by genre, and preview them in the page (no sign-in needed).</li>
       <li>Like and comment without signing in; bookmarks, follows and notifications need sign-in.</li>
       <li>Share one of your own YouTube Music playlists with a title, description, genres and cover image.</li>

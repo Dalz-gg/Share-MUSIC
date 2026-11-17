@@ -5,16 +5,16 @@
   <meta name="google-site-verification" content="UzKWJGOOcBFPQZmBWWZ8xaH-b2gvgsp6LVh4XumG9LA" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Share MUSIC</title>
-  <meta name="description" content="あなたの好きが誰かの1曲に。YouTube Music のプレイリストやおすすめの曲を共有して、みんなで聴いて、いいねし合える場所。">
+  <meta name="description" content="人のおすすめで、新しい曲と出会う。大好きな曲を「ここを聴いて」の一瞬といっしょにおすすめして、刺さった・わかる・ありがとうで共感し合う場所。">
   <meta property="og:site_name" content="Share MUSIC">
   <meta property="og:title" content="Share MUSIC">
-  <meta property="og:description" content="あなたの好きが誰かの1曲に。">
+  <meta property="og:description" content="人のおすすめで、新しい曲と出会う。おすすめして、共感し合おう。">
   <meta property="og:type" content="website">
   <meta property="og:image" content="https://playlist-share.netlify.app/og.png?v=4">
   <meta property="og:url" content="https://playlist-share.netlify.app/">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Share MUSIC">
-  <meta name="twitter:description" content="あなたの好きが誰かの1曲に。">
+  <meta name="twitter:description" content="人のおすすめで、新しい曲と出会う。おすすめして、共感し合おう。">
   <meta name="twitter:image" content="https://playlist-share.netlify.app/og.png?v=4">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=2">
@@ -49,6 +49,7 @@
     #splash .sp-eq { display: flex; gap: 4px; height: 18px; align-items: flex-end; }
     #splash .sp-eq i { width: 4px; height: 4px; background: var(--g1, #D9668C); border-radius: 1px; animation: sp-eq .9s ease-in-out infinite; }
     #splash .sp-eq i:nth-child(2) { animation-delay: .15s; } #splash .sp-eq i:nth-child(3) { animation-delay: .3s; } #splash .sp-eq i:nth-child(4) { animation-delay: .45s; } #splash .sp-eq i:nth-child(5) { animation-delay: .6s; }
+    #splash .sp-tag { font: 700 13px/1 "Zen Kaku Gothic New", sans-serif; letter-spacing: .18em; color: #B9B4AA; opacity: 0; animation: sp-letter .6s .95s cubic-bezier(.2,.8,.2,1) forwards; margin-top: -10px; }
     @keyframes sp-spin { to { transform: rotate(360deg); } }
     @keyframes sp-in { from { opacity: 0; transform: scale(.85) rotate(-60deg); } }
     @keyframes sp-arm { to { transform: rotate(0deg); } }
@@ -68,6 +69,7 @@
     <div class="sp-inner">
       <div class="sp-deck"><div class="sp-disc"></div><div class="sp-arm"></div></div>
       <div class="sp-word"><span style="animation-delay:0.25s">S</span><span style="animation-delay:0.31s">H</span><span style="animation-delay:0.37s">A</span><span style="animation-delay:0.43s">R</span><span style="animation-delay:0.49s">E</span><span style="animation-delay:0.55s">&nbsp;</span><span class="m" style="animation-delay:0.61s">M</span><span class="m" style="animation-delay:0.67s">U</span><span class="m" style="animation-delay:0.73s">S</span><span class="m" style="animation-delay:0.79s">I</span><span class="m" style="animation-delay:0.85s">C</span></div>
+      <div class="sp-tag">出会う・おすすめする・共感する</div>
       <div class="sp-eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
     </div>
   </div>
@@ -77,7 +79,7 @@
       <span class="mark" aria-hidden="true"><i></i></span>
       <span class="word">Share MUSIC</span>
     </a>
-    <div class="mast-r"><div id="conn" class="conn"></div><a class="gear" href="/search" data-act="go" data-to="/search" aria-label="さがす"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg></a><a class="gear bell" id="bell" href="/notifs" data-act="go" data-to="/notifs" aria-label="お知らせ" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg><i class="dot" hidden></i></a><button class="gear" data-act="settings" aria-label="配色"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.8 1.8-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.7 1.7-1.7H16a5 5 0 0 0 5-5c0-4-4-7.2-9-7.2z"/><circle cx="7.5" cy="11" r="1.2" fill="currentColor"/><circle cx="10.5" cy="7" r="1.2" fill="currentColor"/><circle cx="15.5" cy="7.5" r="1.2" fill="currentColor"/></svg></button><a class="helplink" href="/#help">使い方</a></div>
+    <div class="mast-r"><div id="conn" class="conn"></div><a class="gear" href="/search" data-act="go" data-to="/search" aria-label="さがす"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg></a><a class="gear bell" id="bell" href="/notifs" data-act="go" data-to="/notifs" aria-label="お知らせ" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg><i class="dot" hidden></i></a><button class="gear" data-act="settings" aria-label="配色"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.8 1.8-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.7 1.7-1.7H16a5 5 0 0 0 5-5c0-4-4-7.2-9-7.2z"/><circle cx="7.5" cy="11" r="1.2" fill="currentColor"/><circle cx="10.5" cy="7" r="1.2" fill="currentColor"/><circle cx="15.5" cy="7.5" r="1.2" fill="currentColor"/></svg></button><button class="gear" id="menu-btn" data-act="menu" aria-label="メニュー" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button></div>
   </header>
   <div class="stripes" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
   <main id="app" class="wrap"></main>
@@ -87,7 +89,7 @@
   <div id="player" class="player" hidden></div>
   <div id="modal" class="modal" hidden></div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <footer class="foot"><span>© Dalz 2026</span><span class="foot-l"><a href="/about">このアプリについて</a><a href="/privacy">プライバシーポリシー</a></span></footer>
+  <footer class="foot"><span>© Dalz 2026</span><span class="foot-l"><a href="/#help">使い方</a><a href="/about">このアプリについて</a><a href="/privacy">プライバシーポリシー</a></span></footer>
 
   <script src="/config.js"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>

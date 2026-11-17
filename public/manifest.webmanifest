@@ -1,7 +1,7 @@
 {
   "name": "Share MUSIC",
   "short_name": "Share MUSIC",
-  "description": "あなたの好きが誰かの1曲に。",
+  "description": "人のおすすめで、新しい曲と出会う。おすすめして、共感し合おう。",
   "lang": "ja",
   "start_url": "/?source=homescreen",
   "scope": "/",

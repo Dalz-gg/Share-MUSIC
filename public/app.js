@@ -89,6 +89,14 @@ const ICON = {
   copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="1.5"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>',
   send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>',
   ext: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>',
+  /* stage 5 (navigation): お題 / menu / help / about / privacy / 聴く */
+  topic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/><path d="m12 12.6.9 1.9 2 .3-1.5 1.4.4 2-1.8-1-1.8 1 .4-2-1.5-1.4 2-.3z"/></svg>',
+  menu: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg>',
+  help: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.4a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.1-2.4 3.6"/><path d="M12 17h.01" stroke-width="2.8"/></svg>',
+  info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5"/><path d="M12 7.6h.01" stroke-width="2.8"/></svg>',
+  shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5.5c0 4.4 3 8 7 9.5 4-1.5 7-5.1 7-9.5V6z"/><path d="m9 12 2.2 2.2L15.5 10"/></svg>',
+  tree: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.2"/><circle cx="6" cy="18.5" r="2.2"/><circle cx="12" cy="18.5" r="2.2"/><circle cx="18" cy="18.5" r="2.2"/><path d="M12 7.2v9M12 11.5c-4 0-6 1.5-6 4.8M12 11.5c4 0 6 1.5 6 4.8"/></svg>',
+  thanks: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.4-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.6-7.5 10-7.5 10z"/></svg>',
 };
 const PRIV = {
   private: { label: '非公開', tag: 'PRIVATE', desc: '自分だけが見られます。共有ページも表示できません。' },
@@ -345,19 +353,22 @@ function mapPlaylist(p) {
  * ======================================================= */
 const S = { mine: null, mineLoading: false, view: null, edit: null };
 
-/** app-style bottom navigation */
+/** app-style bottom navigation (stage 5): discovery first —
+ *  ホーム(今日のおすすめ) / お題 / ＋おすすめする / コミュニティ / マイページ.
+ *  Listening features (playlists, parties, mixtapes) live in the 「聴く」 page (/#listen) and the header menu. */
 function renderTabbar() {
   const el = document.getElementById('tabbar'); if (!el) return;
   const path = location.pathname, h = location.hash;
   const hide = path === '/admin';
   el.hidden = hide; document.body.classList.toggle('has-tabbar', !hide);
   if (hide) return;
-  const cur = h === '#help' ? '' : path === '/' && !h ? 'home' : path === '/c' || path.startsWith('/c/') ? 'c' : path === '/me' ? 'me' : path === '/bookmarks' ? 'bm' : '';
+  const cur = h === '#help' || h === '#listen' ? '' : path === '/' && !h ? 'home' : path === '/topic' || path.startsWith('/topic/') ? 'topic'
+    : path === '/c' || path.startsWith('/c/') ? 'c' : path === '/me' || path === '/bookmarks' ? 'me' : '';
   const item = (k, to, icon, label, act = 'go') => `<a href="${to}" class="${cur === k ? 'on' : ''}" data-act="${act}" data-to="${to}">${icon}<span>${label}</span></a>`;
   const prev = el.querySelector('.tab-ind')?.style.cssText || '';
-  el.innerHTML = `<i class="tab-ind" style="${prev}"></i>` + item('home', '/', ICON.home, 'ホーム') + item('c', '/c', ICON.chat, 'コミュニティ')
-    + `<a href="/share" class="compose ${path.startsWith('/share') ? 'on' : ''}" data-act="share-sheet" aria-label="共有する"><span class="plus">${ICON.plus}</span></a>`
-    + item('bm', '/bookmarks', ICON.star, 'ブックマーク') + item('me', '/me', ICON.user, 'マイページ');
+  el.innerHTML = `<i class="tab-ind" style="${prev}"></i>` + item('home', '/', ICON.home, 'ホーム') + item('topic', '/topic', ICON.topic, 'お題')
+    + `<a href="/share/song" class="compose ${path === '/share/song' ? 'on' : ''}" data-act="rec-new" aria-label="おすすめ曲を投稿する"><span class="plus">${ICON.plus}<small>おすすめ</small></span></a>`
+    + item('c', '/c', ICON.chat, 'コミュニティ') + item('me', '/me', ICON.user, 'マイページ');
   moveTabIndicator();
 }
 /** the soft pill behind the current tab slides from the previous tab to the new one */
@@ -491,15 +502,20 @@ const Report = {
 /** bottom "+": two cards rise over the current page; sign-in is asked only after choosing */
 const ShareSheet = {
   get el() { return document.getElementById('sheet'); },
+  /** the header menu (stage 5): 聴く features, bookmarks, help, about, privacy. Old act names (sheet-post / sheet-party / sheet-pick) still work. */
   open() {
     const el = this.el; if (!el) return;
     if (!el.hidden) return this.close();
+    const row = (d, attrs, icon, label, sub) => `<button class="mrow rise" style="--d:${d}ms" ${attrs}><span class="mi">${icon}</span><span><b>${label}</b>${sub ? `<small>${sub}</small>` : ''}</span><i class="chev">›</i></button>`;
     el.innerHTML = `<div class="sheet-bg" data-act="sheet-close"></div>
-      <div class="sheet-cards" role="dialog" aria-label="共有する">
-        <button class="choice big rise" style="--d:0ms" data-act="sheet-post"><span class="ci">${ICON.pen}</span><span><b>つぶやく</b><small>ひとこと・曲（ミックステープ）・写真・曲バトルを投稿</small></span><i class="chev">›</i></button>
-        <button class="choice big rise" style="--d:20ms" data-act="sheet-party"><span class="ci">${ICON.party}</span><span><b>リスニングパーティーを開く</b><small>同じ曲をみんなで同時に聴いて、チャットで盛り上がる</small></span><i class="chev">›</i></button>
-        <button class="choice big rise" style="--d:40ms" data-act="sheet-pick" data-to="/share/pl"><span class="ci">♫</span><span><b>プレイリストを共有する</b><small>YouTube Music の自分のプレイリストを選んで掲載</small></span><i class="chev">›</i></button>
-        <button class="choice big rise" style="--d:80ms" data-act="sheet-pick" data-to="/share/song"><span class="ci">♪</span><span><b>おすすめ曲を投稿する</b><small>好きな1曲を検索して、紹介文を添えて投稿</small></span><i class="chev">›</i></button>
+      <div class="sheet-cards menu-sheet" role="dialog" aria-label="メニュー">
+        ${row(0, 'data-act="sheet-go" data-to="/#listen"', ICON.phones, '聴く', 'プレイリスト・リスニングパーティー・ミックステープ')}
+        ${row(20, 'data-act="sheet-go" data-to="/party"', ICON.party, 'リスニングパーティー', '')}
+        ${row(40, 'data-act="sheet-go" data-to="/bookmarks"', ICON.star, 'ブックマーク', '')}
+        <div class="mh">Share MUSIC</div>
+        ${row(60, 'data-act="sheet-go" data-to="/#help"', ICON.help, '使い方', '')}
+        ${row(80, 'data-act="sheet-link" data-to="/about"', ICON.info, 'このアプリについて', '')}
+        ${row(100, 'data-act="sheet-link" data-to="/privacy"', ICON.shield, 'プライバシーポリシー', '')}
       </div>`;
     el.hidden = false; document.body.classList.add('sheet-open');
     requestAnimationFrame(() => el.classList.add('on'));
@@ -528,7 +544,7 @@ function shareThis() {
   if (v?.song) { const so = v.song, who = [so.by, ...(so.also || []).map((x) => x.name)].filter(Boolean); return openShare({ url, title: `${so.title} — ${so.artist}`, text: `♪ ${so.title} / ${so.artist}\n${who.slice(0, 2).join('さん、')}さん${who.length > 2 ? `ほか${who.length - 2}人` : ''}のおすすめ曲${so.desc ? `「${so.desc.slice(0, 60)}」` : ''} #ShareMUSIC` }); }
   if (v?.p && location.pathname.startsWith('/p/')) return openShare({ url, title: v.p.title, text: `「${v.p.title}」— ${v.p.owner}さんのプレイリスト（${v.tracks?.length || 0}曲）#ShareMUSIC` });
   if (location.pathname.startsWith('/u/')) { const n = $('.phead h1')?.textContent || ''; return openShare({ url, title: `${n}さん`, text: `${n}さんの音楽をチェック #ShareMUSIC` }); }
-  return openShare({ url, text: 'Share MUSIC — あなたの好きが、誰かの1曲に。' });
+  return openShare({ url, text: 'Share MUSIC — 人のおすすめで、新しい曲と出会う。好きな曲をおすすめして、共感し合おう。' });
 }
 
 /** share hub (bottom "+"): choose a playlist or a song, then a page of its own */
@@ -538,21 +554,21 @@ function renderShareHub() {
     return setApp(`<h1 class="pagetitle">共有する</h1>
       <div class="sheet stack center" style="padding:32px 18px;margin-top:10px">
         <div class="display" style="font-size:20px">ログインして共有しましょう</div>
-        <div class="small muted">YouTube Music のプレイリストや、好きな1曲をみんなに紹介できます。</div>
+        <div class="small muted">大好きな1曲をおすすめして、誰かの新しい出会いにしましょう。</div>
         <div><button class="btn solid" data-act="login">Googleでログイン</button></div>
       </div>`);
   }
   setApp(`<h1 class="pagetitle">共有する</h1>
     <div class="small muted" style="margin-bottom:6px">何を共有しますか？</div>
-    <button class="choice big" data-act="go" data-to="/share/pl"><span class="ci">♫</span><span><b>プレイリストを共有する</b><small>YouTube Music の自分のプレイリストを選んで、タイトル・紹介文・ジャンル・カバーを決めて掲載します</small></span><i class="chev">›</i></button>
-    <button class="choice big" data-act="go" data-to="/share/song"><span class="ci">♪</span><span><b>おすすめ曲を投稿する</b><small>好きな1曲を検索して選び、ジャンルと紹介文を添えて投稿します</small></span><i class="chev">›</i></button>
+    <button class="choice big" data-act="go" data-to="/share/song"><span class="ci">${ICON.note}</span><span><b>おすすめ曲を投稿する</b><small>好きな1曲を選んで、「ここを聴いて」の瞬間とひとことを添えて投稿します</small></span><i class="chev">›</i></button>
+    <button class="choice big" data-act="go" data-to="/share/pl"><span class="ci">${ICON.link}</span><span><b>プレイリストを共有する</b><small>YouTube Music の自分のプレイリストを選んで、タイトル・紹介文・ジャンル・カバーを決めて掲載します</small></span><i class="chev">›</i></button>
     <div class="hint" style="margin-top:16px">プレイリストのページの曲目にある「＋」からも、その曲をおすすめ曲に投稿できます。共有したものはマイページで確認・編集できます。</div>`);
 }
 function renderSharePage(kind) {
   const pl = kind === 'pl';
   document.title = (pl ? 'プレイリストを共有' : 'おすすめ曲を投稿') + ' — Share MUSIC';
   if (!Api.connected()) return renderShareHub();
-  setApp(`<button class="btn quiet sm back" data-act="go" data-to="/share">← 共有する</button>
+  setApp(`<button class="btn quiet sm back" data-act="go" data-to="${pl ? '/#listen' : '/'}">← ${pl ? '聴く' : 'ホーム'}</button>
     <h1 class="pagetitle">${pl ? 'プレイリストを共有' : 'おすすめ曲を投稿'}</h1>
     <div id="me-body"></div>`);
   drawMeTab();
@@ -572,6 +588,7 @@ function route() {
   if (h.startsWith('#edit=')) return renderShare(h.slice(6));
   if (location.pathname === '/admin') return Admin.render();
   if (h === '#help') return renderHelp();
+  if (h === '#listen') return renderListen();
   if (location.pathname === '/me') return renderMe();
   if (location.pathname === '/search') return renderSearch();
   if (location.pathname === '/bookmarks') return renderBookmarks();
@@ -628,9 +645,9 @@ function renderHome() {
   const rec = Recent.list();
   setApp(`
     <div id="feature"><section class="hero">
-      <div class="eyebrow">For YouTube Music</div>
+      <div class="eyebrow">出会う・おすすめする・共感する</div>
       <h1 class="hero-title" style="margin-top:12px">あなたの好きが、<br><em>誰かの1曲に。</em></h1>
-      <p>好きなプレイリストやおすすめの曲を掲載して、みんなで聴いて、いいねし合える場所です。</p>
+      <p>人のおすすめで新しい曲と出会い、大好きな曲をおすすめして、「わかる」「ありがとう」で共感し合う場所です。</p>
     </section></div>
     ${on ? '' : `<button class="btn lg solid" data-act="login" style="margin-top:18px">Googleでログインして共有する</button>
       <div class="hint">見る・聴く・いいね・コメントはログインなしでできます。</div>`}
@@ -895,7 +912,7 @@ function renderMe() {
       <h1>${esc(pr.name || 'マイページ')}</h1>
       <div class="fcounts" id="fcounts">${Follows.countsHtml({})}</div>
       <div class="stats" id="me-stats">${statsHtml(['–', '–', '–'])}</div>
-      ${pr.id ? `<a class="btn sm" href="/u/${esc(pr.id)}" data-act="go" data-to="/u/${esc(pr.id)}">公開プロフィールを見る</a>` : ''}
+      <div class="row wrap-ok me-links">${pr.id ? `<a class="btn sm" href="/u/${esc(pr.id)}" data-act="go" data-to="/u/${esc(pr.id)}">公開プロフィール</a>` : ''}<a class="btn sm" href="/bookmarks" data-act="go" data-to="/bookmarks">${ICON.star} ブックマーク</a><a class="btn sm" href="/#listen" data-act="go" data-to="/#listen">${ICON.phones} 聴く</a></div>
     </div>
     <div class="bio-box" id="bio-box"></div>
     <div id="prof-extra"></div>
@@ -935,7 +952,7 @@ async function drawMeTab() {
         <div class="row wrap-ok"><span class="spacer small">ログイン前の「警告画面の説明」</span><button class="btn sm" data-act="guide-reset">${store.get('guide-skip') ? 'もう一度表示する' : '表示中'}</button></div>
       </div>
       <div class="label"><b>04</b> その他</div>
-      <div class="row wrap-ok"><a class="btn sm" href="/#help">使い方</a><a class="btn sm" href="/privacy">プライバシーポリシー</a></div>`;
+      <div class="row wrap-ok"><a class="btn sm" href="/#help" data-act="go" data-to="/#help">使い方</a><a class="btn sm" href="/about">このアプリについて</a><a class="btn sm" href="/privacy">プライバシーポリシー</a></div>`;
     return;
   }
   if (tab === 'bm') {
@@ -1787,13 +1804,63 @@ async function runCopy() {
 }
 
 /* =========================================================
- * Help
+ * 聴く (stage 5): listening features gathered in one page — /#listen
+ * ======================================================= */
+function renderListen() {
+  document.title = '聴く — Share MUSIC';
+  const rec = Recent.list();
+  const c = (attrs, icon, title, sub) => `<button class="choice lchoice" ${attrs}><span class="ci">${icon}</span><span><b>${title}</b><small>${sub}</small></span><i class="chev">›</i></button>`;
+  setApp(`<button class="btn quiet sm back" data-act="go" data-to="/">← ホーム</button>
+    <h1 class="pagetitle">聴く</h1>
+    <p class="small muted" style="margin-top:0">みんなのプレイリストを聴いたり、同じ曲をいっしょに聴いたり。</p>
+    <div class="label">リスニングパーティー</div>
+    <div id="lsn-party"><div class="loading" style="padding:10px 0"><span class="spinner"></span></div></div>
+    <div class="label">もっと聴く</div>
+    ${c('data-act="listen-pl"', ICON.note, 'みんなのプレイリスト', '人気のプレイリストをジャンル別にさがして、その場で試聴')}
+    ${c('data-act="sheet-post"', ICON.pen, 'ミックステープをつくる', '好きな曲を何曲でも並べて、コミュニティに投稿')}
+    ${c('data-act="sheet-pick" data-to="/share/pl"', ICON.link, 'プレイリストを共有する', 'YouTube Music の自分のプレイリストを掲載')}
+    ${c('data-act="go" data-to="/bookmarks"', ICON.star, 'ブックマーク', '保存したプレイリストとおすすめ曲')}
+    ${rec.length ? `<details class="recent" style="margin-top:18px"><summary>最近見たもの（${rec.length}）</summary>${Recent.html()}</details>` : ''}`);
+  (typeof partyList === 'function' ? partyList() : Promise.resolve([])).then((items) => {
+    const el = $('#lsn-party'); if (!el) return;
+    el.innerHTML = `${items.length && typeof partyCard === 'function' ? `<div class="shelf-row">${items.map(partyCard).join('')}</div>` : '<div class="tiny muted" style="margin-bottom:6px">いま開催中のパーティーはありません。</div>'}
+      <div class="row wrap-ok" style="margin-top:8px"><button class="btn sm solid" data-act="pty-new">${ICON.party} パーティーを開く</button><button class="btn sm" data-act="go" data-to="/party">すべて見る</button></div>`;
+  });
+}
+/** a small way into 聴く at the bottom of home (whatever module draws home). Idempotent. */
+function mountListenEntry() {
+  if (location.pathname !== '/' || location.hash) return;
+  const app = $('#app'); if (!app || app.querySelector('.listen-entry')) return;
+  app.insertAdjacentHTML('beforeend', `<a class="listen-entry" href="/#listen" data-act="go" data-to="/#listen"><span class="mi">${ICON.phones}</span><span><b>聴く</b><small>プレイリスト・リスニングパーティー・ミックステープ</small></span><i class="chev">›</i></a>`);
+}
+Hooks.home.push(mountListenEntry);
+
+/* =========================================================
+ * Help (使い方) — the new flow, explained simply
  * ======================================================= */
 function renderHelp() {
   document.title = '使い方 — Share MUSIC';
-  setApp(`<button class="btn quiet sm back" data-act="go" data-to="/">← トップ</button>
-    <div class="label"><b>?</b> 使い方</div>
-    <div class="sheet" style="margin-bottom:22px">
+  const step = (n, icon, title, body) => `<li class="hstep" data-n="${n}"><span class="hs-ic">${icon}</span><div><b>${title}</b><p>${body}</p></div></li>`;
+  setApp(`<button class="btn quiet sm back" data-act="go" data-to="/">← ホーム</button>
+    <h1 class="pagetitle">使い方</h1>
+    <section class="help-hero">
+      <div class="eyebrow">Share MUSIC でできること</div>
+      <div class="hh-t">人のおすすめで、<br><em>新しい曲と出会う。</em></div>
+      <p>大好きな曲を友だちにおすすめして、「わかる！」「ありがとう」で共感し合う場所です。聴くのはいつものアプリで。ここは<b>出会いと、おすすめと、共感</b>のための場所です。</p>
+    </section>
+    <ol class="hsteps">
+      ${step(1, ICON.plus, 'おすすめする', '画面下のまんなかの<b>「＋ おすすめ」</b>から、好きな1曲を検索して選びます。「夜の帰り道」「雨」などの場面と、ひとことを添えましょう。')}
+      ${step(2, ICON.note, 'ここを聴いて', 'いちばん聴いてほしい瞬間を選びます。歌詞があれば<b>「刺さった一行」</b>をタップするだけ。見た人はカードをタップすると、その瞬間から約20秒だけ試聴できます。指定がない曲は、サビを自動で探して流します。')}
+      ${step(3, ICON.thanks, 'リアクションとありがとう', 'いいなと思ったら<b>「刺さった」</b>、気持ちがわかるなら<b>「わかる」</b>、教えてくれてうれしかったら<b>「ありがとう」</b>。ありがとうは、おすすめした人に届きます。')}
+      ${step(4, ICON.tree, '布教の木', '「ありがとう」や「私もおすすめ」で、曲が<b>誰から誰へ届いたか</b>がつながっていきます。曲のページで、あなたのおすすめがどこまで広がったかを木の形で見られます。')}
+      ${step(5, ICON.topic, '今週のお題', '毎週ひとつのお題に、<b>1人1曲</b>で答えます（あとから差し替えOK）。画面下の「お題」から、みんなの答えも聴けます。')}
+    </ol>
+    <div class="sheet flat" style="margin-top:6px">
+      <b class="ic-line">${ICON.phones} 聴く機能もそのまま使えます</b>
+      <div class="small muted" style="margin-top:4px">プレイリストの共有・リスニングパーティー・ミックステープは、ホームのいちばん下や右上のメニューの<b>「聴く」</b>にまとめました。</div>
+      <div style="margin-top:10px"><button class="btn sm" data-act="go" data-to="/#listen">聴くを開く</button></div>
+    </div>
+    <div class="sheet" style="margin:22px 0">
       <b style="font-size:16px" class="ic-line">${ICON.device} ホーム画面に追加して使うのがおすすめ</b>
       <div class="small muted" style="margin-top:4px">${Install.standalone() ? 'いまホーム画面から開いています。ばっちりです！' : 'アプリのようにアイコンから全画面で開けて、ブラウザのタブに埋もれません。ログイン状態もそのまま使えます。'}</div>
       <div class="small" style="margin-top:10px"><b>iPhone / iPad</b></div>
@@ -1802,19 +1869,21 @@ function renderHelp() {
       <ol class="howto"><li>Chrome でこのページを開く</li><li>右上の <b>︙（メニュー）</b> を押す</li><li><b>「アプリをインストール」</b> または <b>「ホーム画面に追加」</b></li></ol>
       ${Install.prompt ? '<button class="btn sm solid" style="margin-top:8px" data-act="install">今すぐ追加する</button>' : ''}
     </div>
-    <h2 class="display" style="font-size:26px;margin-bottom:14px">よくある質問</h2>
+    <h2 class="display" style="font-size:24px;margin-bottom:14px">よくある質問</h2>
     <div class="stack">
       ${[
-        ['プレイリストを共有するには？', '画面下の「＋」→「プレイリストを共有する」→ 共有したいプレイリストの「共有する」を押します。タイトル・紹介文・ジャンル・カバー画像・見た目を設定して「みんなのプレイリストに共有する」を押すと、トップページに掲載されます。タイトルと紹介文は YouTube Music 側にも反映されます。'],
-        ['おすすめ曲を投稿するには？', '画面下の「＋」→「おすすめ曲を投稿する」で曲を検索して選び、ジャンルと紹介文を入れて「掲載する」を押します。プレイリストのページの曲目の「＋」からも投稿できます。検索で見つからないときは、YouTube Music で曲の「共有 → リンクをコピー」をして貼り付けてください。'],
-        ['コミュニティ（つぶやき）って？', '画面下の「コミュニティ」で、みんなのつぶやきが見られます。「＋」→「つぶやく」から、ひとこと・曲（何曲でも入れられるミックステープ）・写真1枚を投稿できます。曲を2曲選んで「曲バトル」にすると、どっちが好きか投票してもらえます。返信・引用・🔥😭🎧✨のリアクションもできます（ログインが必要です）。再生パネルの ✎ ボタンで、いま流れている曲をすぐにつぶやけます。'],
-        ['いいね・コメントにログインは必要？', 'いりません。いいねは1つの端末から1回ずつ押せます（もう一度押すと取り消し）。コメントはニックネームを入れて誰でも書けます。'],
+        ['見るだけならログインはいらない？', 'いりません。おすすめを見る・試聴する・コメントするのはログインなしでできます。おすすめする・リアクション・お題に答える・つぶやくときは Google でログインしてください。'],
         ['ログインのときに警告が出る', '個人で運営している小さなアプリで、Google の審査を受けていないため「このアプリは Google で確認されていません」と表示されます。「詳細」→「Share MUSIC（安全ではないページ）に移動」で進めてください。'],
-        ['MV や歌詞を見るには？', 'プレイリストのページで再生すると、再生パネルの「MV」で公式MVに、「歌詞」で歌詞の表示に切り替えられます。シャッフルとリピートもあります。'],
-        ['データはどこに保存されますか？', '共有したプレイリストの情報・おすすめ曲・いいね・コメント・カバー画像は、サービスのためにサーバー（Cloudflare）に保存されます。詳しくはプライバシーポリシーをご覧ください。'],
+        ['「ここを聴いて」の位置がずれる', 'MV のイントロの長さで少しずれることがあります。選ぶ画面の「±」で調整できます。'],
+        ['「推定サビ」って？', '「ここを聴いて」が指定されていない曲は、歌詞のくり返し部分からサビを自動で探しています。見つからないときは曲の真ん中より少し前から流します。'],
+        ['コミュニティって？', '画面下の「コミュニティ」で、ひとこと・曲（ミックステープ）・写真・曲バトル（どっちが好きか投票）をつぶやけます。'],
+        ['プレイリストを共有するには？', '右上のメニュー →「聴く」→「プレイリストを共有する」から、YouTube Music の自分のプレイリストを選んで掲載できます。'],
+        ['いやな投稿を見つけたら', '投稿やコメントの「通報」から運営に知らせてください。通報したことは相手に伝わりません。'],
+        ['データはどこに保存されますか？', 'おすすめ・リアクション・お題の回答・コメントなどはサーバー（Cloudflare）に保存されます。詳しくはプライバシーポリシーをご覧ください。'],
       ].map(([q, a]) => `<div class="sheet flat"><b>${q}</b><div class="small muted" style="margin-top:4px">${a}</div></div>`).join('')}
     </div>
-    <div class="row" style="margin-top:20px"><a class="btn sm" href="/privacy">プライバシーポリシー</a></div>`);
+    <div class="row wrap-ok" style="margin-top:20px"><a class="btn sm" href="/about">このアプリについて</a><a class="btn sm" href="/privacy">プライバシーポリシー</a></div>
+    <p class="tiny muted" style="margin-top:14px">お問い合わせ：<a href="mailto:dalzgamesch@gmail.com">dalzgamesch@gmail.com</a></p>`);
 }
 
 /* =========================================================
@@ -1929,6 +1998,11 @@ document.addEventListener('click', async (ev) => {
     case 'sheet-pick': ShareSheet.pick(el.dataset.to); break;
     case 'sheet-post': ShareSheet.close(); Composer.open(); break;
     case 'sheet-party': ShareSheet.close(); go('/party'); break;
+    case 'menu': ev.preventDefault(); ShareSheet.open(); break;
+    case 'rec-new': ev.preventDefault(); ShareSheet.pick('/share/song'); break;
+    case 'sheet-go': ShareSheet.close(); go(el.dataset.to); break;
+    case 'sheet-link': ShareSheet.close(); location.href = el.dataset.to; break;
+    case 'listen-pl': S.homeTab = 'pl'; S.gsort = 'likes'; S.gq = ''; S.genre = ''; go('/search'); break;
     case 'ly-seek': if (Player.yt?.seekTo) Player.yt.seekTo(+el.dataset.t, true); break;
     case 'play':
       if (el.closest('#bm-list') && S.view?.id !== 'bm') { if (Player.idx >= 0) Player.close(); S.view = S.bmView; }
