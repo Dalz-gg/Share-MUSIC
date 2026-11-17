@@ -17,16 +17,6 @@ const pad2 = (n) => String(n).padStart(2, '0');
  * Extension hooks: feature modules (discover.js, today.js, topics.js, spread.js ...) plug in here
  * instead of editing this file. Each module pushes functions into these lists.
  * ======================================================= */
-const Hooks = {
-  routes: [],   // fn(path, hash) -> true if the module rendered the page
-  actions: [],  // fn(act, el, ev) -> true if the module handled the click
-  notif: {},    // type -> fn(n, who, t) -> message HTML for the notifications page
-  notifLink: {},// type -> fn(n) -> URL to open
-  song: [],     // fn(so, view) after the recommended-song page is drawn (slots: #song-moment, #song-reacts, #song-spread)
-  profile: [],  // fn(id, { isMe }) after a profile / my page is drawn (slot: #prof-extra)
-  home: [],     // fn() after home is drawn
-  renderHome: null, // a module may replace the whole home page: fn() -> void
-};
 const store = {
   get(k, d = null) { try { const v = localStorage.getItem('ps.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) { try { localStorage.setItem('ps.' + k, JSON.stringify(v)); } catch { /* ignore */ } },
