@@ -121,14 +121,17 @@
       const ln = this.lineOf(s), art = s.art || s.thumb || (s.videoId ? `https://i.ytimg.com/vi/${s.videoId}/hqdefault.jpg` : '');
       const ps = recPeople(s);
       const big = ln.text || s.title;
+      const mt = Number.isFinite(+s.moment?.t) && s.moment?.t != null ? +s.moment.t : null;
+      const fmt = (x) => `${Math.floor(x / 60)}:${String(Math.floor(x % 60)).padStart(2, '0')}`;
       return `<article class="tdy-card" data-sid="${esc(s.sid)}" style="--i:${Math.min(i % PAGE, 7)}">
         <button class="tdy-body" data-act="tdy-play" data-sid="${esc(s.sid)}" aria-label="${esc(s.title)} を試聴">
           <span class="tdy-art">${art ? `<img src="${esc(art)}" alt="" loading="lazy">` : ''}<i class="tdy-pbtn" aria-hidden="true">${ICON.play}</i></span>
-          <span class="tdy-q ${ln.isLine ? 'line' : ln.text ? 'memo' : 'title'}">${esc(big.length > 90 ? big.slice(0, 88) + '…' : big)}</span>
+          <span class="tdy-qw"><span class="tdy-q ${ln.isLine ? 'line' : ln.text ? 'memo' : 'title'}">${esc(big.length > 90 ? big.slice(0, 88) + '…' : big)}</span>
+            <span class="tdy-cta">${ICON.play}${mt != null ? `ここから試聴 <em>${fmt(mt)}〜</em>` : 'サビから試聴'}</span></span>
         </button>
         <div class="tdy-foot">
           <button class="tdy-song" data-act="go" data-to="/s/${esc(s.sid)}" aria-label="${esc(s.title)} の曲ページを開く">
-            <span class="tdy-st"><b>${esc(s.title)}</b><small>${esc(s.artist)}</small></span><span class="tdy-chev">${I.chev}</span></button>
+            <span class="tdy-st"><b>${esc(s.title)}</b><small>${esc(s.artist)}</small></span><span class="tdy-det">詳細・コメント${I.chev}</span></button>
           ${this.sceneTags(s) ? `<div class="tdy-scenes">${this.sceneTags(s)}</div>` : ''}
           <div class="tdy-meta">
             <span class="tdy-by"><span class="avs">${ps.slice(0, 3).map((x) => Avatars.html(x.id, x.name)).join('')}</span><span class="tdy-byn">${ps.slice(0, 2).map((x) => esc(x.name) + 'さん').join('、')}${ps.length > 2 ? `ほか${ps.length - 2}人` : ''}${ps.length > 1 ? 'が' : 'の'}おすすめ</span></span>

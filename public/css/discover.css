@@ -44,29 +44,76 @@
 .dsc-chip:active { transform: scale(.95); }
 .dsc-chip.on { background: var(--grad); color: var(--on-grad, #fff); border-color: transparent; }
 
-/* ---------- preview panel (sits right above the player dock, never over the video) ---------- */
-.dsc-pv { position: fixed; left: 0; right: 0; bottom: calc(var(--dock-h, 280px) - 2px); z-index: 29; max-width: 760px; margin: 0 auto; padding: 0 10px 6px; pointer-events: none; }
-body.has-tabbar .dsc-pv { bottom: calc(var(--dock-h, 280px) + var(--tabbar-h) - 2px); }
-.dsc-pv-card { animation: dscRise .35s cubic-bezier(.2,.8,.2,1) both; }
-.dsc-pv.out .dsc-pv-card { animation: dscFall .22s ease both; }
-.dsc-pv-card { pointer-events: auto; border-radius: 18px; padding: 10px 12px 10px; background: color-mix(in srgb, var(--card) 93%, transparent); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); border: 1px solid var(--line); box-shadow: 0 -10px 30px rgba(0,0,0,.3); }
-.dsc-pv-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.dsc-pv-head b { flex: 1; min-width: 0; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--sub); }
-.dsc-pv-head .dsc-x { width: 30px; height: 30px; }
-.dsc-pv-k { flex: none; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--glass-2); color: var(--ink); font-variant-numeric: tabular-nums; }
+/* ---------- preview card: one frosted card, nearly full screen.
+   Top-left = the (single) YouTube player as a 200x200 square with a record spinning out behind it;
+   lower half = lyrics. The iframe itself stays inside #player: CSS just moves #player onto the slot. ---------- */
+.dsc-pv { position: fixed; inset: 0; z-index: 45; display: grid; padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+  background: rgba(8, 8, 12, .38); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); animation: dscFade .25s ease both; }
+.dsc-pv.out { animation: dscFadeOut .2s ease both; }
+.dsc-pv-card { position: relative; isolation: isolate; overflow: hidden; width: 100%; max-width: 520px; margin: 0 auto; min-height: 0;
+  display: flex; flex-direction: column; gap: 12px; padding: 16px 16px 14px; border-radius: 26px;
+  background: linear-gradient(165deg, color-mix(in srgb, var(--g1) 18%, transparent), transparent 45%), color-mix(in srgb, var(--card) 58%, transparent);
+  backdrop-filter: blur(28px) saturate(1.5); -webkit-backdrop-filter: blur(28px) saturate(1.5);
+  border: 1px solid var(--frost-edge, rgba(255,255,255,.12)); box-shadow: inset 0 1px 0 var(--frost-hi, rgba(255,255,255,.1)), 0 24px 60px rgba(0,0,0,.45); }
+.dsc-pv-card::before { content: ""; position: absolute; inset: -20%; z-index: -1; background: var(--pv-art) center / cover no-repeat; filter: blur(60px) saturate(1.6); opacity: .28; pointer-events: none; }
+.dsc-pv-close { position: absolute; top: 12px; right: 12px; z-index: 2; width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center;
+  background: var(--glass-2); color: var(--ink); cursor: pointer; transition: transform .25s var(--spring, ease); }
+.dsc-pv-close:active { transform: scale(.9); }
+.dsc-pv-close svg { width: 18px; height: 18px; }
+
+/* video slot + record */
+.dsc-pv-deck { position: relative; flex: none; width: 300px; max-width: calc(100% - 44px); height: 200px; }
+.dsc-pv-vslot { position: absolute; left: 0; top: 0; width: 200px; height: 200px; border-radius: 12px; background: #000; z-index: 1; box-shadow: 8px 8px 24px rgba(0,0,0,.4); }
+.dsc-pv-disc { position: absolute; top: 6px; left: 92px; width: 188px; height: 188px; border-radius: 50%; z-index: 0;
+  background: repeating-radial-gradient(circle at 50% 50%, #121211 0 1.5px, #1c1c1a 1.5px 3px), #111; box-shadow: 0 8px 22px rgba(0,0,0,.4);
+  animation: dscPeek .9s .1s cubic-bezier(.2,.8,.2,1) backwards, spin 3.2s linear infinite; animation-play-state: running, paused; }
+.dsc-pv-deck.spin .dsc-pv-disc { animation-play-state: running, running; }
+.dsc-pv-disc::after { content: ""; position: absolute; inset: 0; border-radius: 50%; pointer-events: none;
+  background: conic-gradient(from 30deg, transparent 0 7%, rgba(255,255,255,.13) 11%, transparent 17% 57%, rgba(255,255,255,.09) 61%, transparent 67%); }
+.dsc-pv-lbl { position: absolute; inset: 0; margin: auto; width: 40%; height: 40%; border-radius: 50%; overflow: hidden; background: var(--grad); box-shadow: 0 0 0 3px rgba(0,0,0,.55); }
+.dsc-pv-lbl img { width: 100%; height: 100%; object-fit: cover; display: block; transform: scale(1.34); }
+.dsc-pv-lbl i { position: absolute; inset: 0; margin: auto; width: 8px; height: 8px; border-radius: 50%; background: var(--paper); box-shadow: 0 0 0 2px rgba(0,0,0,.45); }
+@keyframes dscPeek { from { left: 20px; } }
+
+body.dsc-pv-open #player { position: fixed; z-index: 46; left: var(--pvv-x, 28px); top: var(--pvv-y, 28px); right: auto; bottom: auto; width: 200px; height: 200px; padding: 0; margin: 0;
+  background: transparent; border: 0; border-radius: 12px; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; overflow: hidden; animation: none; transform: none; }
+body.dsc-pv-open #player::before, body.dsc-pv-open #player::after { display: none; }
+body.dsc-pv-open #player .inner { display: block; padding: 0; margin: 0; max-width: none; }
+body.dsc-pv-open #player .inner > :not(.video) { display: none; }
+body.dsc-pv-open #player .video { width: 200px; height: 200px; border-radius: 12px; }
+body.dsc-pv-open { overflow: hidden; }
+body.dsc-pv-open .lyrics, body.dsc-pv-open #lyrics { display: none; }
+
+.dsc-pv-info { flex: none; display: grid; gap: 4px; min-width: 0; }
+.dsc-pv-k { justify-self: start; font-size: 11.5px; font-weight: 700; padding: 4px 11px; border-radius: 999px; background: var(--glass-2); color: var(--ink); font-variant-numeric: tabular-nums; }
 .dsc-pv-k.pick { background: var(--grad); color: var(--on-grad, #fff); }
-.dsc-pv-ly { position: relative; height: 84px; overflow: hidden; margin: 6px 2px 4px; scroll-behavior: smooth; mask-image: linear-gradient(transparent, #000 26%, #000 74%, transparent); -webkit-mask-image: linear-gradient(transparent, #000 26%, #000 74%, transparent); }
-.dsc-pv-ly p { margin: 0; padding: 3px 0; font-size: 14px; line-height: 1.5; color: var(--sub); opacity: .5; transition: opacity .25s ease, color .25s ease; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dsc-pv-ly p.on { opacity: 1; color: var(--ink); font-weight: 700; font-size: 16px; }
-.dsc-pv-ly p.solo { white-space: normal; padding-top: 24px; text-align: center; }
-.dsc-pv-bar { height: 3px; border-radius: 3px; background: var(--rule); overflow: hidden; }
+.dsc-pv-title { font-family: var(--display); font-size: 21px; font-weight: 900; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dsc-pv-artist { font-size: 12.5px; color: var(--sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dsc-pv-scenes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+
+.dsc-pv-ly { position: relative; flex: 1; min-height: 90px; overflow-y: auto; scrollbar-width: none; padding: 30px 2px; scroll-behavior: smooth;
+  mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent); -webkit-mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent); }
+.dsc-pv-ly::-webkit-scrollbar { display: none; }
+.dsc-pv-ly p { margin: 0; padding: 5px 0; font-size: 16px; font-weight: 700; line-height: 1.5; color: var(--sub); opacity: .45; transition: opacity .3s ease, color .3s ease, transform .4s var(--spring, ease); transform-origin: left center; }
+.dsc-pv-ly p.on { opacity: 1; color: var(--ink); transform: scale(1.12); }
+.dsc-pv-ly p.solo { padding-top: 20px; text-align: center; transform-origin: center; }
+.dsc-pv-bar { flex: none; height: 4px; border-radius: 4px; background: var(--rule, rgba(255,255,255,.12)); overflow: hidden; }
 .dsc-pv-bar i { display: block; height: 100%; width: 0; background: var(--grad); transition: width .2s linear; }
-.dsc-pv-foot { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
-.dsc-pv-foot .dsc-mini { min-width: 38px; height: 30px; padding: 0 8px; }
+.dsc-pv-ctl { flex: none; display: flex; align-items: center; gap: 8px; }
+.dsc-pv-ctl .spacer { flex: 1; }
+.dsc-pv-adjg { display: inline-flex; align-items: center; gap: 2px; }
+.dsc-pv-adjg .dsc-mini { min-width: 36px; height: 32px; padding: 0 8px; }
 .dsc-adj { font-size: 11px; color: var(--sub); min-width: 46px; text-align: center; font-variant-numeric: tabular-nums; }
-.dsc-pv-foot .spacer { flex: 1; }
-body.dsc-pv-open.has-player { padding-bottom: calc(var(--dock-h, 440px) + 190px); }
-body.dsc-pv-open.has-tabbar.has-player { padding-bottom: calc(var(--dock-h, 440px) + var(--tabbar-h) + 190px); }
+.dsc-pv-pp { width: 48px; height: 48px; border-radius: 50%; border: 0; display: grid; place-items: center; cursor: pointer; background: var(--grad); color: var(--on-grad, #fff);
+  box-shadow: 0 8px 20px var(--grad-glow, rgba(133,114,214,.35)); transition: transform .25s var(--spring, ease); }
+.dsc-pv-pp:active { transform: scale(.9); }
+.dsc-pv-pp svg { width: 20px; height: 20px; }
+.dsc-pv-foot { flex: none; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.dsc-pv-foot .btn { height: 46px; justify-content: center; font-weight: 700; }
+.dsc-pv-detail { display: inline-flex; align-items: center; gap: 4px; }
+.dsc-pv-detail span { font-size: 20px; line-height: 1; margin-top: -2px; }
+@keyframes dscFade { from { opacity: 0; } }
+@keyframes dscFadeOut { to { opacity: 0; } }
 @keyframes dscRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 @keyframes dscFall { to { opacity: 0; transform: translateY(14px); } }
 

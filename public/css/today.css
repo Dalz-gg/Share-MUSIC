@@ -136,3 +136,15 @@
   .tdy-card, .tdy-thx { animation: none; }
   .tdy-rb.pop .ic, .tdy-rb.pop::after, .likebtn.sasa.pop .heart { animation: none; }
 }
+
+/* clear tap targets: upper part = 試聴 in place, title band = 曲の詳細ページ */
+.tdy-qw { min-width: 0; display: grid; gap: 10px; align-content: center; }
+.tdy-cta { justify-self: start; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px 6px 10px; border-radius: 999px; font-size: 12px; font-weight: 700;
+  background: var(--grad); color: var(--on-grad, #fff); box-shadow: 0 6px 16px var(--grad-glow, rgba(133,114,214,.3)); transition: transform .3s var(--spring, ease); }
+.tdy-cta svg { width: 12px; height: 12px; }
+.tdy-cta em { font-style: normal; font-variant-numeric: tabular-nums; opacity: .85; }
+.tdy-body:active .tdy-cta { transform: scale(.94); }
+.tdy-pbtn { display: none; }
+.tdy-det { flex: none; display: inline-flex; align-items: center; gap: 2px; padding: 5px 6px 5px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700;
+  color: var(--ink); background: var(--glass-2); border: 1px solid var(--line); }
+.tdy-det svg { width: 14px; height: 14px; }

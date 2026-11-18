@@ -1216,7 +1216,9 @@ function drawViewer() {
  * ======================================================= */
 async function renderSong(sid) {
   if (S.view?.id === 's:' + sid && S.view.tracks) return drawSong();
-  if (Player.idx >= 0) Player.close();
+  // coming from the in-place preview of this same song: keep it playing
+  const keep = S.view?.kind === 'dsc' && S.view.song?.sid === sid && Player.idx >= 0 && Player.track === S.view.tracks?.[0] ? S.view.tracks[0] : null;
+  if (!keep && Player.idx >= 0) Player.close();
   S.view = { id: 's:' + sid }; S.look = 'vinyl';
   setApp('<div class="loading"><span class="spinner"></span> 曲を読み込み中…</div>');
   const list = await Songs.load(true);
@@ -1224,7 +1226,7 @@ async function renderSong(sid) {
   const so = list.find((x) => x.sid === sid);
   if (!so) return setApp(`<div class="sheet stack" style="margin-top:28px"><b>この曲は見つかりませんでした</b><div class="small muted">削除されたか、非公開になった可能性があります。</div><div><button class="btn sm" data-act="go-songs">おすすめ曲の一覧へ</button></div></div>`);
   const p = { id: so.sid, title: so.title, owner: so.by, ownerId: so.byId, image: so.art || `https://i.ytimg.com/vi/${so.videoId}/hqdefault.jpg`, description: so.desc || '' };
-  const t = { id: so.videoId, name: so.title, artist: so.artist, d: so.d || 0, embed: so.embed !== false, thumb: so.thumb, isMv: so.src === 'mv' };
+  const t = keep || { id: so.videoId, name: so.title, artist: so.artist, d: so.d || 0, embed: so.embed !== false, thumb: so.thumb, isMv: so.src === 'mv' };
   S.view = { id: 's:' + sid, kind: 's', p, tracks: [t], song: so };
   drawSong();
   if (so.src !== 'audio') upgradeToAudio(t, so);
@@ -1562,7 +1564,7 @@ const Player = {
       this.yt.loadVideoById(vid);
     }
     if (Lyrics.open) Lyrics.show(t);
-    if (!store.get('mvHint')) { store.set('mvHint', 1); setTimeout(() => toast('再生バーの「MV」でMVに、「歌詞」で歌詞に切り替えられます', 4500), 1200); }
+    if (!store.get('mvHint')) setTimeout(() => { if (document.body.classList.contains('dsc-pv-open') || store.get('mvHint')) return; store.set('mvHint', 1); toast('再生バーの「MV」でMVに、「歌詞」で歌詞に切り替えられます', 4500); }, 1200);
   },
   failed() {
     const t = this.track; if (!t) return;

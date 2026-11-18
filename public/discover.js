@@ -167,7 +167,7 @@ const Discover = {
       return;
     }
     const vid = yt?.getVideoData?.()?.video_id;
-    if (pv.vid && vid && vid !== pv.vid) { pv.full = true; return this.stop(); } // switched to the MV / audio
+    if (pv.vid && vid && vid !== pv.vid) { pv.full = true; return this.stop(); } // switched to the MV / audio: the dock takes over
     const cur = yt?.getCurrentTime?.() || 0, s = this.vStart(), e = s + this.PREVIEW_SEC;
     if (!pv.full) {
       if (cur > e + 4 || cur < s - 6) pv.full = true; // the user moved the seek bar: let it play
@@ -175,12 +175,13 @@ const Discover = {
     }
     this.syncPanel(cur);
   },
+  /** 全部聴く: keep the card and play to the end; pressed again (小さくして聴き続ける) it hands over to the normal player dock */
   full() {
     const pv = this.pv; if (!pv) return;
-    pv.full = true;
+    if (pv.full) return this.stop();
+    pv.full = true; pv.ended = false;
     if (!Player.playing) Player.yt?.playVideo?.();
-    this.stop();
-    toast('このまま最後まで再生します');
+    this.drawPanel();
   },
   replay() { const pv = this.pv; if (!pv) return; pv.full = false; this.seek(); this.drawPanel(); },
   nudge(d) {
@@ -191,7 +192,14 @@ const Discover = {
     if (!Player.playing) Player.yt?.playVideo?.();
     const a = document.getElementById('dsc-adj'); if (a) a.textContent = pv.adj ? `${pv.adj > 0 ? '+' : ''}${pv.adj}秒` : 'ずれ補正';
   },
-  /** end the preview; pause=true also pauses a preview that was still inside its ~20 s */
+  /** 曲の詳細: leave the card (music keeps playing in the dock) and open the song page */
+  detail() {
+    const pv = this.pv; if (!pv) return;
+    const sid = pv.song.sid, here = S.view?.song?.sid === sid && location.pathname === '/s/' + sid;
+    pv.full = true; this.stop();
+    if (sid && !here) go('/s/' + sid);
+  },
+  /** end the preview card; pause=true also pauses a preview that was still inside its ~20 s */
   stop(pause) {
     clearInterval(this.timer); this.timer = null;
     if (pause && this.pv && !this.pv.full && Player.playing) Player.yt?.pauseVideo?.();
@@ -199,32 +207,66 @@ const Discover = {
     const el = document.getElementById('dsc-pv');
     if (el) { el.classList.add('out'); setTimeout(() => el.remove(), 220); }
     document.body.classList.remove('dsc-pv-open');
+    removeEventListener('resize', this.onResize);
   },
+  /** put the (single) YouTube player exactly on the card's video slot: the iframe is never moved in the DOM */
+  place() {
+    const slot = document.getElementById('dsc-pv-vslot'); if (!slot) return;
+    const r = slot.getBoundingClientRect(), b = document.body.style;
+    b.setProperty('--pvv-x', Math.round(r.left) + 'px'); b.setProperty('--pvv-y', Math.round(r.top) + 'px');
+  },
+  onResize: () => Discover.place(),
   drawPanel() {
     const pv = this.pv; if (!pv) return;
     let el = document.getElementById('dsc-pv');
-    if (!el) { el = document.createElement('div'); el.id = 'dsc-pv'; el.className = 'dsc-pv'; document.body.appendChild(el); }
-    document.body.classList.add('dsc-pv-open');
+    if (!el) { el = document.createElement('div'); el.id = 'dsc-pv'; el.className = 'dsc-pv'; document.body.appendChild(el); addEventListener('resize', this.onResize); }
+    el.classList.remove('out');
     const so = pv.song, st = pv.start, lines = pv.ly?.lines;
-    const label = !st ? '試聴の準備中…' : st.est ? `推定サビ ・ ${this.fmt(st.t)}〜` : `ここを聴いて ・ ${this.fmt(st.t)}〜`;
-    el.innerHTML = `<div class="dsc-pv-card" role="region" aria-label="試聴">
-      <div class="dsc-pv-head"><span class="dsc-pv-k ${st && !st.est ? 'pick' : ''}">${esc(label)}</span><b>${esc(so.title)}</b>
-        <button class="dsc-x" data-act="dsc-pv-close" aria-label="試聴パネルを閉じる">${ICON.close}</button></div>
+    const art = so.art || so.thumb || (so.videoId ? `https://i.ytimg.com/vi/${so.videoId}/hqdefault.jpg` : '');
+    const label = pv.full ? '全曲を再生中' : !st ? '試聴の準備中…' : st.est ? `推定サビから試聴 ・ ${this.fmt(st.t)}〜` : `ここを聴いて ・ ${this.fmt(st.t)}〜`;
+    const ps = typeof recPeople === 'function' ? recPeople(so) : so.by ? [{ id: so.byId, name: so.by }] : [];
+    const by = ps.length ? `${ps.slice(0, 2).map((x) => esc(x.name) + 'さん').join('、')}${ps.length > 2 ? `ほか${ps.length - 2}人` : ''}のおすすめ` : '';
+    const here = S.view?.song?.sid === so.sid && location.pathname === '/s/' + so.sid;
+    const scenes = this.sceneTags(so);
+    el.innerHTML = `<div class="dsc-pv-card" role="dialog" aria-label="${esc(so.title)} の試聴" style="--pv-art:url('${esc(art)}')">
+      <button class="dsc-pv-close" data-act="dsc-pv-close" aria-label="試聴を閉じる">${ICON.close}</button>
+      <div class="dsc-pv-deck ${Player.playing ? 'spin' : ''}" id="dsc-pv-deck">
+        <span class="dsc-pv-disc"><span class="dsc-pv-lbl">${art ? `<img src="${esc(art)}" alt="">` : ''}<i></i></span></span>
+        <div class="dsc-pv-vslot" id="dsc-pv-vslot"></div>
+      </div>
+      <div class="dsc-pv-info">
+        <span class="dsc-pv-k ${pv.full ? 'full' : st && !st.est ? 'pick' : ''}">${esc(label)}</span>
+        <b class="dsc-pv-title">${esc(so.title)}</b>
+        <span class="dsc-pv-artist">${esc(so.artist || '')}${by ? ` ・ ${by}` : ''}</span>
+        ${scenes ? `<div class="dsc-pv-scenes">${scenes}</div>` : ''}
+      </div>
       <div class="dsc-pv-ly" id="dsc-pv-ly">${lines ? lines.map((l, i) => `<p data-i="${i}">${esc(l.text)}</p>`).join('')
         : `<p class="on solo">${st ? esc(this.lineOf(so) || (pv.ly ? '（同期歌詞がない曲です）' : '（歌詞が見つかりませんでした）')) : '<span class="spinner"></span>'}</p>`}</div>
       <div class="dsc-pv-bar"><i id="dsc-pv-bar"></i></div>
-      <div class="dsc-pv-foot">
-        <button class="dsc-mini" data-act="dsc-adj" data-d="-1" aria-label="1秒早める">−1</button><span class="dsc-adj" id="dsc-adj">${pv.adj ? `${pv.adj > 0 ? '+' : ''}${pv.adj}秒` : 'ずれ補正'}</span><button class="dsc-mini" data-act="dsc-adj" data-d="1" aria-label="1秒遅らせる">+1</button>
+      <div class="dsc-pv-ctl">
+        <span class="dsc-pv-adjg"><button class="dsc-mini" data-act="dsc-adj" data-d="-1" aria-label="1秒早める">−1</button><span class="dsc-adj" id="dsc-adj">${pv.adj ? `${pv.adj > 0 ? '+' : ''}${pv.adj}秒` : 'ずれ補正'}</span><button class="dsc-mini" data-act="dsc-adj" data-d="1" aria-label="1秒遅らせる">+1</button></span>
         <span class="spacer"></span>
         <button class="btn sm quiet" data-act="dsc-replay">もう一度</button>
-        <button class="btn sm solid" data-act="dsc-full">全部聴く</button></div>
+        <button class="dsc-pv-pp" data-act="p-toggle" id="dsc-pv-pp" aria-label="再生/一時停止">${Player.playing ? ICON.pause : ICON.play}</button>
+      </div>
+      <div class="dsc-pv-foot">
+        <button class="btn solid" data-act="dsc-full">${pv.full ? '小さくして聴き続ける' : '全部聴く'}</button>
+        <button class="btn dsc-pv-detail" data-act="dsc-detail">${here ? '曲のページに戻る' : '曲の詳細・コメント'}<span aria-hidden="true">›</span></button>
+      </div>
     </div>`;
-    pv.cur = -2;
+    document.body.classList.add('dsc-pv-open');
+    this.place(); requestAnimationFrame(() => this.place());
+    pv.cur = -2; pv.pp = null;
   },
   syncPanel(cur) {
     const pv = this.pv; if (!pv) return;
-    const s = this.vStart(), bar = document.getElementById('dsc-pv-bar');
-    if (bar) bar.style.width = (pv.full ? 100 : Math.max(0, Math.min(100, ((cur - s) / this.PREVIEW_SEC) * 100))).toFixed(1) + '%';
+    const s = this.vStart(), bar = document.getElementById('dsc-pv-bar'), dur = Player.yt?.getDuration?.() || 0;
+    if (bar) bar.style.width = (pv.full ? (dur ? (cur / dur) * 100 : 0) : Math.max(0, Math.min(100, ((cur - s) / this.PREVIEW_SEC) * 100))).toFixed(1) + '%';
+    if (pv.pp !== Player.playing) {
+      pv.pp = Player.playing;
+      const pp = document.getElementById('dsc-pv-pp'); if (pp) pp.innerHTML = Player.playing ? ICON.pause : ICON.play;
+      document.getElementById('dsc-pv-deck')?.classList.toggle('spin', !!Player.playing);
+    }
     const lines = pv.ly?.lines; if (!lines) return;
     const i = this.lineIndex(lines, cur - pv.off - pv.adj);
     if (i === pv.cur) return; pv.cur = i;
@@ -305,7 +347,8 @@ const Discover = {
   action(act, el) {
     switch (act) {
       case 'dsc-pv-song': if (S.view?.song) this.preview(S.view.song); return true;
-      case 'dsc-pv-close': this.stop(true); return true; // pauses unless 全部聴く was chosen
+      case 'dsc-pv-close': this.stop(); Player.close(); return true;
+      case 'dsc-detail': this.detail(); return true;
       case 'dsc-full': this.full(); return true;
       case 'dsc-replay': this.replay(); return true;
       case 'dsc-adj': this.nudge(+el.dataset.d || 0); return true;
