@@ -29,7 +29,7 @@ const ROUTES = [
   [(p) => p === '/api/song-react' || p === '/api/song-reacts', reactions],
   [(p) => ['/api/topic', '/api/topics', '/api/topic-admin'].includes(p), topics],
 ];
-const SPA = (p) => p === '/me' || p === '/search' || p === '/bookmarks' || p === '/share' || p.startsWith('/share/') || p === '/notifs' || p === '/c' || p.startsWith('/c/') || p === '/party' || p.startsWith('/party/') || p === '/admin' || p.startsWith('/u/');
+const SPA = (p) => p === '/me' || p === '/picks' || p === '/search' || p === '/bookmarks' || p === '/share' || p.startsWith('/share/') || p === '/notifs' || p === '/c' || p.startsWith('/c/') || p === '/party' || p.startsWith('/party/') || p === '/admin' || p.startsWith('/u/');
 const CACHEABLE = (p) => p.startsWith('/p/') || p.startsWith('/s/') || p.startsWith('/c/') || p.startsWith('/party/') || p.startsWith('/u/') || ['/api/mv', '/api/ja', '/api/song-search', '/api/song-match', '/api/gallery', '/api/songs', '/api/cover-info'].includes(p);
 
 async function cached(req, env, handler, ctx) {

@@ -24,13 +24,16 @@ const pickGenres = (g) => [...new Set((Array.isArray(g) ? g : [g]).filter((x) =>
 const GENRES = ['jpop', 'rock', 'anime', 'citypop', 'kpop', 'western', 'hiphop', 'edm', 'chill', 'bgm', 'other'];
 /** 「ここを聴いて」: moment { t: seconds 0..3600, line: ≤120 chars } and up to 3 scene ids (same ids as Discover.SCENES in public/discover.js).
  *  Returns only the keys present in the body, so a PUT without them keeps the stored values; moment: null removes it. */
-const SCENES = ['night', 'morning', 'rain', 'drive', 'work', 'heartbreak', 'cheer', 'sleepless', 'season', 'love', 'cry', 'walk'];
+const SCENES = ['night', 'morning', 'rain', 'drive', 'work', 'heartbreak', 'cheer', 'sleepless', 'season', 'love', 'cry', 'walk',
+  'commute', 'focus', 'workout', 'dance', 'party', 'karaoke', 'chill', 'healing', 'bath', 'cafe', 'sunset', 'travel',
+  'summer', 'winter', 'youth', 'nostalgia', 'friends', 'alone', 'midnight', 'brave'];
 function momentFields(b) {
   const out = {};
   if ('moment' in b) {
     const t = Number(b.moment?.t);
     out.moment = b.moment && Number.isFinite(t) && t >= 0 && t <= 3600 ? { t: Math.round(t * 10) / 10, line: clip(b.moment.line, 120) } : undefined;
   }
+  if ('head' in b) out.head = clip(String(b.head || '').replace(/\s+/g, ' ').trim(), 60);
   if ('scenes' in b) out.scenes = [...new Set((Array.isArray(b.scenes) ? b.scenes : []).filter((x) => SCENES.includes(x)))].slice(0, 3);
   return out;
 }
@@ -174,8 +177,8 @@ async function songs(req, url) {
   const store = db();
   if (req.method === 'GET') {
     const list = (await readJson(store, 'songs', [])).filter((s) => !s.hidden);
-    const likes = await readJson(store, 'likes', {}), cc = await readJson(store, 'ccount', {});
-    return json({ items: list.map((s) => ({ ...s, likes: likes['s:' + s.sid] || 0, comments: cc['s:' + s.sid] || 0 })) }, 200, 'public, s-maxage=30, stale-while-revalidate=120');
+    const likes = await readJson(store, 'likes', {}), cc = await readJson(store, 'ccount', {}), bc = await readJson(store, 'bmcount', {});
+    return json({ items: list.map((s) => ({ ...s, likes: likes['s:' + s.sid] || 0, comments: cc['s:' + s.sid] || 0, bm: bc['s:' + s.sid] || 0 })) }, 200, 'public, s-maxage=30, stale-while-revalidate=120');
   }
   const who = await me(req.headers.get('authorization'));
   if (!who) return json({ error: 'ログインしてください' }, 401);
@@ -234,6 +237,7 @@ async function songs(req, url) {
   const genres = pickGenres(b.genres ?? b.genre);
   if (!genres.length) return json({ error: 'ジャンルを1つ以上選んでください' }, 400);
   const genre = genres[0];
+  if (!momentFields(b).moment) return json({ error: '「ここを聴いて」（どこから流すか）を選んでください' }, 400);
   const r = await yt('videos', { part: 'snippet,status,contentDetails', id: b.videoId });
   const v = r.ok ? (await r.json()).items?.[0] : null;
   if (!v) return json({ error: 'この曲は見つかりませんでした' }, 404);

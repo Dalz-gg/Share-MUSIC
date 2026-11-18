@@ -13,7 +13,7 @@ const Spread = (() => {
     also: svg('<circle cx="9.5" cy="8" r="3.5"/><path d="M3.5 20c.7-3.6 3.2-5.5 6-5.5s4 1 5 2.6"/><path d="M18.5 13v7M15 16.5h7"/>'),
     topic: svg('<path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/>'),
   };
-  const KIND = { thx: 'ありがとう', also: '私もおすすめ', topic: 'お題' };
+  const KIND = { thx: 'ハート', also: '私もおすすめ', topic: 'お題' };
   const MAX_NODES = 120;
   const get = async (q) => { const r = await fetch('/api/spread?' + q); if (!r.ok) throw new Error(r.status); return r.json(); };
 
@@ -98,7 +98,7 @@ const Spread = (() => {
     box.insertAdjacentHTML('beforeend', `<div class="spr-reach">
       <span class="spr-reach-ic">${IC.tree}</span>
       <div><div class="spr-reach-t">${who} <b>${r.depth}段階</b>で <b>${r.people}人</b>に${verb}</div>
-      <div class="spr-reach-s">ありがとう・私もおすすめ・お題で広がった人数</div></div>
+      <div class="spr-reach-s">ハート・私もおすすめ・お題で広がった人数</div></div>
     </div>`);
   }
 

@@ -309,6 +309,7 @@ const Songs = {
   async post(btn) {
     const p = this.picked; if (!p) return;
     if (!pickedGenres('song-genres').length) { $('#song-genres').classList.add('need'); return toast('ジャンルを1つ以上選んでください'); }
+    if (window.Discover && !p.moment) { document.getElementById('dsc-p-moment')?.classList.add('need'); document.getElementById('dsc-p-moment')?.scrollIntoView({ block: 'center', behavior: 'smooth' }); return toast('「どこから流すか」を選んでください'); }
     btn.disabled = true;
     try {
       const h = await Social.headers(); if (!h) throw new AuthError('ログインしてください');

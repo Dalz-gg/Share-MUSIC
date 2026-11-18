@@ -17,6 +17,10 @@ const Discover = {
     ['night', '夜の帰り道'], ['morning', '朝'], ['rain', '雨の日'], ['drive', 'ドライブ'], ['work', '作業・勉強'],
     ['heartbreak', '失恋'], ['cheer', '元気がほしい'], ['sleepless', '眠れない夜'], ['season', '季節を感じる'],
     ['love', '恋してる'], ['cry', '泣きたい'], ['walk', '散歩'],
+    ['commute', '通勤・通学'], ['focus', '集中したい'], ['workout', '運動・ランニング'], ['dance', '踊りたい'], ['party', '盛り上がりたい'],
+    ['karaoke', 'カラオケで歌いたい'], ['chill', 'まったり'], ['healing', '癒されたい'], ['bath', 'お風呂'], ['cafe', 'カフェ気分'],
+    ['sunset', '夕焼け'], ['travel', '旅に出たい'], ['summer', '夏'], ['winter', '冬'], ['youth', '青春'], ['nostalgia', '懐かしい'],
+    ['friends', '友だちと'], ['alone', 'ひとりの時間'], ['midnight', '深夜'], ['brave', '勇気がほしい'],
   ],
   PREVIEW_SEC: 20,
   sceneName(id) { return (this.SCENES.find((x) => x[0] === id) || [])[1] || ''; },
@@ -129,14 +133,14 @@ const Discover = {
     let t;
     if (onPage) t = S.view.tracks[0];
     else {
-      if (Player.idx >= 0) Player.close();
+      // keep the existing YouTube player (loadVideoById inside this tap starts with sound on iPhone too)
       t = { id: song.videoId, name: song.title, artist: song.artist, d: song.d || 0, embed: true, thumb: song.art || song.thumb, isMv: song.src === 'mv' };
       S.view = { id: 'dsc:' + (song.sid || song.videoId), kind: 'dsc', tracks: [t], song };
     }
     const same = Player.idx === 0 && Player.yt && Player.track === t;
     if (Player.pip) Player.setPip(false);
     if (Lyrics.open) { Lyrics.open = false; Lyrics.hide(); document.getElementById('pl-lyrics')?.classList.remove('on'); }
-    if (!same) { Player.order = null; Player.play(0); } // started inside the tap (iPhone autoplay rule)
+    if (!same) { Player.order = null; Player.startMuted = !Player.yt; Player.play(0); } // started inside the tap; a brand-new player starts muted so it always starts, then turns the sound on
     const pv = this.pv = { song, t, full: false, start: null, ly: null, off: 0, adj: this.adj(song.videoId), seeked: false, vid: null, began: Date.now(), ended: false };
     this.drawPanel();
     this.startOf(song).then((st) => {
@@ -196,8 +200,13 @@ const Discover = {
   detail() {
     const pv = this.pv; if (!pv) return;
     const sid = pv.song.sid, here = S.view?.song?.sid === sid && location.pathname === '/s/' + sid;
-    pv.full = true; this.stop();
-    if (sid && !here) go('/s/' + sid);
+    this.stop(); Player.close(); // the song page plays the whole song from its own play button
+    if (sid && !here) go('/s/' + sid); else if (here) { if (S.view?.kind !== 's') S.view = null; route(); }
+  },
+  unmute() { Player.unmuteNow(); this.drawMute(); },
+  drawMute() {
+    const b = document.getElementById('dsc-pv-snd'); if (!b) return;
+    const m = !!Player.yt?.isMuted?.(); b.hidden = !m;
   },
   /** end the preview card; pause=true also pauses a preview that was still inside its ~20 s */
   stop(pause) {
@@ -249,9 +258,9 @@ const Discover = {
         <button class="btn sm quiet" data-act="dsc-replay">もう一度</button>
         <button class="dsc-pv-pp" data-act="p-toggle" id="dsc-pv-pp" aria-label="再生/一時停止">${Player.playing ? ICON.pause : ICON.play}</button>
       </div>
+      <button class="dsc-pv-snd" id="dsc-pv-snd" data-act="dsc-unmute" hidden>${ICON.phones}<span>タップで音を出す</span></button>
       <div class="dsc-pv-foot">
-        <button class="btn solid" data-act="dsc-full">${pv.full ? '小さくして聴き続ける' : '全部聴く'}</button>
-        <button class="btn dsc-pv-detail" data-act="dsc-detail">${here ? '曲のページに戻る' : '曲の詳細・コメント'}<span aria-hidden="true">›</span></button>
+        <button class="btn solid dsc-pv-detail" data-act="dsc-detail"><span class="t">${here ? '曲のページで全部聴く' : '曲の詳細へ（全部聴く・コメント）'}</span><span class="c" aria-hidden="true">›</span></button>
       </div>
     </div>`;
     document.body.classList.add('dsc-pv-open');
@@ -267,6 +276,7 @@ const Discover = {
       const pp = document.getElementById('dsc-pv-pp'); if (pp) pp.innerHTML = Player.playing ? ICON.pause : ICON.play;
       document.getElementById('dsc-pv-deck')?.classList.toggle('spin', !!Player.playing);
     }
+    this.drawMute();
     const lines = pv.ly?.lines; if (!lines) return;
     const i = this.lineIndex(lines, cur - pv.off - pv.adj);
     if (i === pv.cur) return; pv.cur = i;
@@ -284,9 +294,10 @@ const Discover = {
     const el = document.getElementById('song-moment'); if (!el) return;
     const line = this.lineOf(so), has = !!(so.moment && Number.isFinite(+so.moment.t));
     el.innerHTML = `<section class="dsc-moment ${line ? '' : 'noline'}">
+      ${so.head ? `<h2 class="dsc-head">${esc(so.head)}</h2>` : ''}
       ${line ? `<div class="dsc-k">刺さった一行</div><p class="dsc-line">${esc(line)}</p>` : ''}
       <div class="dsc-row">
-        <button class="btn solid dsc-listen" data-act="dsc-pv-song">${ICON.play}<span>${has ? 'ここから聴く' : '推定サビから聴く'}</span><em id="dsc-at">${has ? this.fmt(so.moment.t) + '〜' : ''}</em></button>
+        <button class="btn solid dsc-listen" data-act="dsc-pv-song">${ICON.play}<span>聴いてみる</span><em id="dsc-at">${has ? this.fmt(so.moment.t) + '〜' : ''}</em></button>
         <span class="dsc-scenes">${this.sceneTags(so)}</span>
       </div>
       <div id="dsc-own"></div>
@@ -295,19 +306,20 @@ const Discover = {
     if (Api.connected()) Api.myId().then((me) => {
       if (me !== so.byId || S.view?.song !== so) return;
       const o = document.getElementById('dsc-own');
-      if (o) o.innerHTML = `<button class="dsc-edit" data-act="dsc-edit">${ICON.pen}${has ? '「ここを聴いて」・場面を編集' : '「ここを聴いて」と場面を追加'}</button>`;
+      if (o) o.innerHTML = `<button class="dsc-edit" data-act="dsc-edit">${ICON.pen}${has ? 'タイトル・「ここを聴いて」・場面を編集' : 'タイトル・「ここを聴いて」・場面を追加'}</button>`;
     });
   },
   /** owner-only inline editor for moment + scenes (PUT /api/songs with only these fields) */
   edit: null,
   openEdit() {
     const so = S.view?.song; if (!so) return;
-    this.edit = { moment: so.moment ? { ...so.moment } : null, scenes: [...(so.scenes || [])] };
+    this.edit = { head: so.head || '', moment: so.moment ? { ...so.moment } : null, scenes: [...(so.scenes || [])] };
     this.drawEdit();
   },
   drawEdit() {
     const o = document.getElementById('dsc-own'), e = this.edit; if (!o || !e) return;
     o.innerHTML = `<div class="dsc-editor">
+      <div class="dsc-lbl">タイトル</div><input class="input dsc-head-in" id="dsc-e-head" maxlength="60" placeholder="ホームに大きく表示されます" value="${esc(e.head)}" oninput="Discover.edit && (Discover.edit.head = this.value)">
       <div class="dsc-lbl">ここを聴いて</div>${this.momentField(e.moment, 'dsc-e-moment')}
       <div class="dsc-lbl">場面（3つまで）</div>${this.scenePicker('dsc-e-scenes', e.scenes)}
       <div class="row"><span class="spacer"></span><button class="btn quiet sm" data-act="dsc-edit-cancel">やめる</button><button class="btn accent sm" data-act="dsc-edit-save">保存</button></div></div>`;
@@ -317,20 +329,20 @@ const Discover = {
     btn.disabled = true;
     try {
       const h = await Social.headers(); if (!h) throw new Error('ログインしてください');
-      const r = await fetch('/api/songs?sid=' + encodeURIComponent(so.sid), { method: 'PUT', headers: { ...h, 'Content-Type': 'application/json' }, body: JSON.stringify({ moment: e.moment, scenes: e.scenes }) });
+      const r = await fetch('/api/songs?sid=' + encodeURIComponent(so.sid), { method: 'PUT', headers: { ...h, 'Content-Type': 'application/json' }, body: JSON.stringify({ head: (e.head || '').trim(), moment: e.moment, scenes: e.scenes }) });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.error || '保存できませんでした');
-      so.moment = j.item?.moment; so.scenes = j.item?.scenes || [];
+      so.moment = j.item?.moment; so.scenes = j.item?.scenes || []; so.head = j.item?.head || '';
       if (!so.moment) delete so.moment;
       this.edit = null; Songs.list = null; toast('保存しました'); this.drawSlot(so);
     } catch (err) { toast(err.message, 4000); btn.disabled = false; }
   },
 
   /* ---- shared form parts (post form in community.js and the editor above) ---- */
-  momentField(m, id) {
+  momentField(m, id, req) {
     return `<div class="dsc-mf" id="${id}">${m ? `<div class="dsc-mf-on"><span class="dsc-time">${this.fmt(m.t)}</span><span class="dsc-mf-line">${m.line ? esc(m.line) : '<span class="muted">（一行なし）</span>'}</span>
-        <button class="btn sm quiet" data-act="dsc-mf-pick" data-for="${id}">変更</button><button class="dsc-x" data-act="dsc-mf-clear" data-for="${id}" aria-label="指定をやめる">${ICON.close}</button></div>`
-      : `<button class="dsc-mf-btn" data-act="dsc-mf-pick" data-for="${id}"><span class="dsc-mf-ic">${ICON.note}</span><span><b>一番聴いてほしい瞬間を選ぶ</b><small>歌詞の「刺さった一行」をタップして指定。選ばなければサビを自動で推定します</small></span></button>`}</div>`;
+        <button class="btn sm quiet" data-act="dsc-mf-pick" data-for="${id}">変更</button>${req ? '' : `<button class="dsc-x" data-act="dsc-mf-clear" data-for="${id}" aria-label="指定をやめる">${ICON.close}</button>`}</div>`
+      : `<button class="dsc-mf-btn" data-act="dsc-mf-pick" data-for="${id}"><span class="dsc-mf-ic">${ICON.note}</span><span><b>一番聴いてほしい瞬間を選ぶ</b><small>${req ? '歌詞の行をタップするか、つまみで秒数を指定します。ホームの「聴いてみる」でここから流れます' : '歌詞の「刺さった一行」をタップして指定。選ばなければサビを自動で推定します'}</small></span></button>`}</div>`;
   },
   scenePicker(id, sel) {
     return `<div class="dsc-chips" id="${id}">${this.SCENES.map(([k, n]) => `<button type="button" class="dsc-chip ${sel.includes(k) ? 'on' : ''}" data-act="dsc-scene" data-for="${id}" data-k="${k}" aria-pressed="${sel.includes(k)}">${esc(n)}</button>`).join('')}</div>`;
@@ -339,16 +351,19 @@ const Discover = {
   stateFor(id) { return id.startsWith('dsc-e-') ? this.edit : (typeof Songs !== 'undefined' ? Songs.picked : null); },
   /** extra fields for the おすすめ曲 post form (community.js) */
   postFields(p) {
-    return `<label class="small muted">ここを聴いて（任意）</label>${this.momentField(p.moment || null, 'dsc-p-moment')}
+    return `<label class="small muted" for="dsc-p-head">タイトル（ホームに大きく表示されます・60文字まで）</label>
+      <input class="input dsc-head-in" id="dsc-p-head" maxlength="60" placeholder="例：夜の帰り道、これを聴いてほしい" value="${esc(p.head || '')}" oninput="Songs.picked && (Songs.picked.head = this.value)">
+      <label class="small muted">どこから流すか（必須）</label>${this.momentField(p.moment || null, 'dsc-p-moment', true)}
       <label class="small muted">場面（任意・3つまで）</label>${this.scenePicker('dsc-p-scenes', p.scenes || [])}`;
   },
-  postBody(p) { return { ...(p.moment ? { moment: p.moment } : {}), scenes: p.scenes || [] }; },
+  postBody(p) { return { head: (document.getElementById('dsc-p-head')?.value ?? p.head ?? '').trim(), ...(p.moment ? { moment: p.moment } : {}), scenes: p.scenes || [] }; },
 
   action(act, el) {
     switch (act) {
       case 'dsc-pv-song': if (S.view?.song) this.preview(S.view.song); return true;
       case 'dsc-pv-close': this.stop(); Player.close(); return true;
       case 'dsc-detail': this.detail(); return true;
+      case 'dsc-unmute': this.unmute(); return true;
       case 'dsc-full': this.full(); return true;
       case 'dsc-replay': this.replay(); return true;
       case 'dsc-adj': this.nudge(+el.dataset.d || 0); return true;
@@ -370,7 +385,7 @@ const Discover = {
           : { id: st.videoId, title: document.getElementById('song-title')?.value.trim() || st.name, artist: document.getElementById('song-artist')?.value.trim() || st.artist, d: st.d || 0, moment: st.moment };
         this.pickMoment(arg).then((m) => {
           if (!m || this.stateFor(id) !== st) return;
-          st.moment = m; const box = document.getElementById(id); if (box) box.outerHTML = this.momentField(m, id);
+          st.moment = m; const box = document.getElementById(id); if (box) box.outerHTML = this.momentField(m, id, id === 'dsc-p-moment');
         });
         return true;
       }

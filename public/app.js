@@ -357,7 +357,7 @@ function renderTabbar() {
   const item = (k, to, icon, label, act = 'go') => `<a href="${to}" class="${cur === k ? 'on' : ''}" data-act="${act}" data-to="${to}">${icon}<span>${label}</span></a>`;
   const prev = el.querySelector('.tab-ind')?.style.cssText || '';
   el.innerHTML = `<i class="tab-ind" style="${prev}"></i>` + item('home', '/', ICON.home, 'ホーム') + item('topic', '/topic', ICON.topic, 'お題')
-    + `<a href="/share/song" class="compose ${path === '/share/song' ? 'on' : ''}" data-act="rec-new" aria-label="おすすめ曲を投稿する"><span class="plus">${ICON.plus}<small>おすすめ</small></span></a>`
+    + `<a href="/share/song" class="compose ${path === '/share/song' ? 'on' : ''}" data-act="rec-new" aria-label="投稿する"><span class="plus">${ICON.plus}<small>おすすめ</small></span></a>`
     + item('c', '/c', ICON.chat, 'コミュニティ') + item('me', '/me', ICON.user, 'マイページ');
   moveTabIndicator();
 }
@@ -511,9 +511,24 @@ const ShareSheet = {
     el.hidden = false; document.body.classList.add('sheet-open');
     requestAnimationFrame(() => el.classList.add('on'));
   },
+  /** the ＋ button: a menu rises over the current screen — start a recommended song, a post or a playlist */
+  post() {
+    const el = this.el; if (!el) return;
+    if (!el.hidden) return this.close();
+    const it = (d, attrs, icon, label, sub) => `<button class="choice big rise post-choice" style="--d:${d}ms" ${attrs}><span class="ci">${icon}</span><span><b>${label}</b><small>${sub}</small></span><i class="chev">›</i></button>`;
+    el.innerHTML = `<div class="sheet-bg" data-act="sheet-close"></div>
+      <div class="sheet-cards post-sheet" role="dialog" aria-label="投稿する">
+        <div class="post-sheet-h rise" style="--d:0ms">なにを投稿する？</div>
+        ${it(60, 'data-act="sheet-pick" data-to="/share/song"', ICON.note, 'おすすめの曲', '好きな1曲を「ここを聴いて」と一緒に')}
+        ${it(30, 'data-act="sheet-post"', ICON.pen, 'つぶやき', 'コミュニティに書く・写真や曲も添えられます')}
+        ${it(0, 'data-act="sheet-pick" data-to="/share/pl"', ICON.link, 'プレイリスト', 'YouTube Music のプレイリストを共有')}
+      </div>`;
+    el.hidden = false; document.body.classList.add('sheet-open', 'post-open');
+    requestAnimationFrame(() => el.classList.add('on'));
+  },
   close() {
     const el = this.el; if (!el || el.hidden) return;
-    el.classList.remove('on'); document.body.classList.remove('sheet-open');
+    el.classList.remove('on'); document.body.classList.remove('sheet-open', 'post-open');
     setTimeout(() => { if (!el.classList.contains('on')) { el.hidden = true; el.innerHTML = ''; } }, 250);
   },
   async pick(to) {
@@ -638,7 +653,7 @@ function renderHome() {
     <div id="feature"><section class="hero">
       <div class="eyebrow">出会う・おすすめする・共感する</div>
       <h1 class="hero-title" style="margin-top:12px">あなたの好きが、<br><em>誰かの1曲に。</em></h1>
-      <p>人のおすすめで新しい曲と出会い、大好きな曲をおすすめして、「わかる」「ありがとう」で共感し合う場所です。</p>
+      <p>人のおすすめで新しい曲と出会い、大好きな曲をおすすめして、いいね・ハートで共感し合う場所です。</p>
     </section></div>
     ${on ? '' : `<button class="btn lg solid" data-act="login" style="margin-top:18px">Googleでログインして共有する</button>
       <div class="hint">見る・聴く・いいね・コメントはログインなしでできます。</div>`}
@@ -656,8 +671,7 @@ function drawFeature() {
   const el = $('#feature'); if (!el || location.pathname !== '/' || location.hash) return;
   const g = [...(Social.gallery || [])].sort((a, b) => (b.likes || 0) - (a.likes || 0) || (b.at || 0) - (a.at || 0)).slice(0, 5);
   if (!g.length) return; // keep the big catchphrase while nothing is shared yet
-  el.innerHTML = `<div class="mini-hero">あなたの好きが、<em>誰かの1曲に。</em></div>
-    <div class="feat" id="feat">${g.map((p) => `<a class="fc" href="/p/${esc(p.id)}" data-act="go" data-to="/p/${esc(p.id)}">
+  el.innerHTML = `    <div class="feat" id="feat">${g.map((p) => `<a class="fc" href="/p/${esc(p.id)}" data-act="go" data-to="/p/${esc(p.id)}">
       ${p.image ? `<img src="${esc(p.image)}" alt="">` : jcard(p.title)}
       <span class="ov"><span class="k">今週のピックアップ</span><b>${esc(p.title)}</b><span class="m">${Avatars.html(p.ownerId, p.owner, 'sm')}${esc(p.owner)}${p.likes ? ` ・ ♥ ${p.likes}` : ''}${p.count ? ` ・ ${p.count}曲` : ''}</span></span>
       <button class="pbtn" data-act="feat-play" data-id="${esc(p.id)}" aria-label="${esc(p.title)} を再生">${ICON.play}</button></a>`).join('')}</div>
@@ -1549,22 +1563,33 @@ const Player = {
     if (!this.yt) {
       this.yt = new window.YT.Player('ytplayer', {
         width: '356', height: '200', videoId: vid,
-        playerVars: { autoplay: 1, playsinline: 1, rel: 0 },
+        playerVars: { autoplay: 1, playsinline: 1, rel: 0, ...(this.startMuted ? { mute: 1 } : {}) },
         events: {
           onReady: (e) => e.target.playVideo(),
           onStateChange: (e) => {
             this.playing = e.data === 1 || (e.data === 3 && this.playing);
+            if (e.data === 1 && this._unmute) { this._unmute = false; this.unmuteNow(true); }
             if (e.data === 0 && !Party.isGuest()) this.next(true);
             this.drawState();
           },
           onError: () => this.failed(),
         },
       });
+      this._unmute = !!this.startMuted;
     } else {
       this.yt.loadVideoById(vid);
     }
+    this.startMuted = false;
     if (Lyrics.open) Lyrics.show(t);
     if (!store.get('mvHint')) setTimeout(() => { if (document.body.classList.contains('dsc-pv-open') || store.get('mvHint')) return; store.set('mvHint', 1); toast('再生バーの「MV」でMVに、「歌詞」で歌詞に切り替えられます', 4500); }, 1200);
+  },
+  /** a player that had to start muted (phones block sound autoplay in a new embed): turn the sound on.
+   *  auto=true: right after it started; if the phone refuses (pauses / stays muted) keep playing muted and let the user tap. */
+  unmuteNow(auto) {
+    const y = this.yt; if (!y?.unMute) return;
+    y.unMute(); y.setVolume?.(100);
+    if (!y.getPlayerState || y.getPlayerState() !== 1) y.playVideo?.();
+    if (auto) setTimeout(() => { if (this.yt !== y) return; if (y.getPlayerState?.() !== 1) { y.mute?.(); y.playVideo?.(); } }, 600);
   },
   failed() {
     const t = this.track; if (!t) return;
@@ -1839,13 +1864,13 @@ function renderHelp() {
     <section class="help-hero">
       <div class="eyebrow">Share MUSIC でできること</div>
       <div class="hh-t">人のおすすめで、<br><em>新しい曲と出会う。</em></div>
-      <p>大好きな曲を友だちにおすすめして、「わかる！」「ありがとう」で共感し合う場所です。聴くのはいつものアプリで。ここは<b>出会いと、おすすめと、共感</b>のための場所です。</p>
+      <p>大好きな曲を友だちにおすすめして、いいね・ハートで共感し合う場所です。聴くのはいつものアプリで。ここは<b>出会いと、おすすめと、共感</b>のための場所です。</p>
     </section>
     <ol class="hsteps">
-      ${step(1, ICON.plus, 'おすすめする', '画面下のまんなかの<b>「＋ おすすめ」</b>から、好きな1曲を検索して選びます。「夜の帰り道」「雨」などの場面と、ひとことを添えましょう。')}
-      ${step(2, ICON.note, 'ここを聴いて', 'いちばん聴いてほしい瞬間を選びます。歌詞があれば<b>「刺さった一行」</b>をタップするだけ。見た人はカードをタップすると、その瞬間から約20秒だけ試聴できます。指定がない曲は、サビを自動で探して流します。')}
-      ${step(3, ICON.thanks, 'リアクションとありがとう', 'いいなと思ったら<b>「刺さった」</b>、気持ちがわかるなら<b>「わかる」</b>、教えてくれてうれしかったら<b>「ありがとう」</b>。ありがとうは、おすすめした人に届きます。')}
-      ${step(4, ICON.tree, '布教の木', '「ありがとう」や「私もおすすめ」で、曲が<b>誰から誰へ届いたか</b>がつながっていきます。曲のページで、あなたのおすすめがどこまで広がったかを木の形で見られます。')}
+      ${step(1, ICON.plus, 'おすすめする', '画面下のまんなかの<b>「＋」</b>から「おすすめの曲」を選び、好きな1曲を検索します。ホームに大きく出る<b>タイトル</b>と、「夜の帰り道」「雨」などの場面、ひとことを添えましょう。')}
+      ${step(2, ICON.note, 'ここを聴いて', '<b>どこから流すか</b>を必ず選びます。歌詞があれば行をタップするだけ。見た人が<b>「聴いてみる」</b>を押すと、その瞬間から約20秒すぐに流れます。全部聴きたいときは「曲の詳細へ」から。')}
+      ${step(3, ICON.thanks, 'いいね と ハート', 'いいなと思ったら<b>いいね</b>、教えてくれてうれしかったら<b>ハート</b>。ハートは「ありがとう」の気持ちとして、おすすめした人みんなに届きます。')}
+      ${step(4, ICON.tree, '布教の木', 'ハートや「私もおすすめ」で、曲が<b>誰から誰へ届いたか</b>がつながっていきます。曲のページで、あなたのおすすめがどこまで広がったかを木の形で見られます。')}
       ${step(5, ICON.topic, '今週のお題', '毎週ひとつのお題に、<b>1人1曲</b>で答えます（あとから差し替えOK）。画面下の「お題」から、みんなの答えも聴けます。')}
     </ol>
     <div class="sheet flat" style="margin-top:6px">
@@ -1992,7 +2017,7 @@ document.addEventListener('click', async (ev) => {
     case 'sheet-post': ShareSheet.close(); Composer.open(); break;
     case 'sheet-party': ShareSheet.close(); go('/party'); break;
     case 'menu': ev.preventDefault(); ShareSheet.open(); break;
-    case 'rec-new': ev.preventDefault(); ShareSheet.pick('/share/song'); break;
+    case 'rec-new': ev.preventDefault(); ShareSheet.post(); break;
     case 'sheet-go': ShareSheet.close(); go(el.dataset.to); break;
     case 'sheet-link': ShareSheet.close(); location.href = el.dataset.to; break;
     case 'listen-pl': S.homeTab = 'pl'; S.gsort = 'likes'; S.gq = ''; S.genre = ''; go('/search'); break;
@@ -2080,7 +2105,7 @@ const Backdrop = {
     if (u) { el.style.setProperty('--art', `url("${u.replace(/"/g, '%22')}")`); el.classList.add('on'); } else el.classList.remove('on');
   },
   auto() {
-    const img = document.querySelector('#app .deck .sleeve img, #app .plhead .art img, #app .tile .art img, #app .pl .cover img');
+    const img = document.querySelector('#app .tdy-card.focus .tdy-art img, #app .deck .sleeve img, #app .plhead .art img, #app .tile .art img, #app .pl .cover img');
     this.set(img ? img.currentSrc || img.src : '');
   },
 };
@@ -2089,7 +2114,7 @@ new MutationObserver(() => { clearTimeout(Backdrop.t); Backdrop.t = setTimeout((
 /** fade the loading screen out once the first page has drawn (kept at least ~1.9s so the animation can play) */
 function hideSplash() {
   const sp = document.getElementById('splash'); if (!sp || sp.classList.contains('out')) return;
-  const wait = Math.max(0, 1900 - (Date.now() - (window.__splashAt || 0)));
+  const wait = Math.max(0, 2500 - (Date.now() - (window.__splashAt || 0)));
   setTimeout(() => { sp.classList.add('out'); setTimeout(() => sp.remove(), 600); }, wait);
 }
 Api.probe();

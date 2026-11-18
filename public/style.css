@@ -1590,3 +1590,12 @@ body.sheet-open .tabbar .plus, body.sheet-open .tabbar .compose:active .plus { t
 .hstep b { display: block; font-size: 16px; margin-top: 2px; }
 .hstep p { margin: 4px 0 0; font-size: 13.5px; line-height: 1.8; color: var(--sub); }
 .hstep p b { display: inline; font-size: inherit; color: var(--ink); margin: 0; }
+
+/* ＋ menu (post a recommended song / a post / a playlist) */
+.post-sheet { gap: 10px; }
+.post-sheet-h { justify-self: center; font-size: 12px; font-weight: 700; letter-spacing: .12em; color: var(--ink); padding: 6px 14px; border-radius: 999px; background: var(--glass-2); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.post-choice .ci { background: var(--grad); color: var(--on-grad, #fff); box-shadow: 0 8px 20px var(--grad-glow, rgba(133,114,214,.35)); }
+.post-choice:active { transform: scale(.97); }
+.tabbar .compose .plus svg { transition: transform .45s var(--spring); }
+body.post-open .tabbar .compose .plus svg { transform: rotate(135deg); }
+body.post-open .tabbar { z-index: 41; }
