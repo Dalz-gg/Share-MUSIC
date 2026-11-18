@@ -21,6 +21,7 @@ const Discover = {
     ['karaoke', 'カラオケで歌いたい'], ['chill', 'まったり'], ['healing', '癒されたい'], ['bath', 'お風呂'], ['cafe', 'カフェ気分'],
     ['sunset', '夕焼け'], ['travel', '旅に出たい'], ['summer', '夏'], ['winter', '冬'], ['youth', '青春'], ['nostalgia', '懐かしい'],
     ['friends', '友だちと'], ['alone', 'ひとりの時間'], ['midnight', '深夜'], ['brave', '勇気がほしい'],
+    ['family', '家族'], ['festival', 'お祭り'], ['wafu', '和風'],
   ],
   PREVIEW_SEC: 20,
   sceneName(id) { return (this.SCENES.find((x) => x[0] === id) || [])[1] || ''; },
@@ -140,7 +141,7 @@ const Discover = {
     const same = Player.idx === 0 && Player.yt && Player.track === t;
     if (Player.pip) Player.setPip(false);
     if (Lyrics.open) { Lyrics.open = false; Lyrics.hide(); document.getElementById('pl-lyrics')?.classList.remove('on'); }
-    if (!same) { Player.order = null; Player.startMuted = !Player.yt; Player.play(0); } // started inside the tap; a brand-new player starts muted so it always starts, then turns the sound on
+    if (!same) { Player.order = null; Player.play(0); } // started inside the tap; on iPhone the first song starts with the play button
     const pv = this.pv = { song, t, full: false, start: null, ly: null, off: 0, adj: this.adj(song.videoId), seeked: false, vid: null, began: Date.now(), ended: false };
     this.drawPanel();
     this.startOf(song).then((st) => {
@@ -203,11 +204,7 @@ const Discover = {
     this.stop(); Player.close(); // the song page plays the whole song from its own play button
     if (sid && !here) go('/s/' + sid); else if (here) { if (S.view?.kind !== 's') S.view = null; route(); }
   },
-  unmute() { Player.unmuteNow(); this.drawMute(); },
-  drawMute() {
-    const b = document.getElementById('dsc-pv-snd'); if (!b) return;
-    const m = !!Player.yt?.isMuted?.(); b.hidden = !m;
-  },
+
   /** end the preview card; pause=true also pauses a preview that was still inside its ~20 s */
   stop(pause) {
     clearInterval(this.timer); this.timer = null;
@@ -258,7 +255,6 @@ const Discover = {
         <button class="btn sm quiet" data-act="dsc-replay">もう一度</button>
         <button class="dsc-pv-pp" data-act="p-toggle" id="dsc-pv-pp" aria-label="再生/一時停止">${Player.playing ? ICON.pause : ICON.play}</button>
       </div>
-      <button class="dsc-pv-snd" id="dsc-pv-snd" data-act="dsc-unmute" hidden>${ICON.phones}<span>タップで音を出す</span></button>
       <div class="dsc-pv-foot">
         <button class="btn solid dsc-pv-detail" data-act="dsc-detail"><span class="t">${here ? '曲のページで全部聴く' : '曲の詳細へ（全部聴く・コメント）'}</span><span class="c" aria-hidden="true">›</span></button>
       </div>
@@ -276,7 +272,6 @@ const Discover = {
       const pp = document.getElementById('dsc-pv-pp'); if (pp) pp.innerHTML = Player.playing ? ICON.pause : ICON.play;
       document.getElementById('dsc-pv-deck')?.classList.toggle('spin', !!Player.playing);
     }
-    this.drawMute();
     const lines = pv.ly?.lines; if (!lines) return;
     const i = this.lineIndex(lines, cur - pv.off - pv.adj);
     if (i === pv.cur) return; pv.cur = i;
@@ -363,7 +358,6 @@ const Discover = {
       case 'dsc-pv-song': if (S.view?.song) this.preview(S.view.song); return true;
       case 'dsc-pv-close': this.stop(); Player.close(); return true;
       case 'dsc-detail': this.detail(); return true;
-      case 'dsc-unmute': this.unmute(); return true;
       case 'dsc-full': this.full(); return true;
       case 'dsc-replay': this.replay(); return true;
       case 'dsc-adj': this.nudge(+el.dataset.d || 0); return true;
@@ -519,8 +513,6 @@ window.Discover = Discover;
 (function plug() {
   if (typeof Hooks === 'undefined') return setTimeout(plug, 0);
   Hooks.actions.push((act, el, ev) => (act.startsWith('dsc-') ? Discover.action(act, el, ev) : false));
-  Hooks.song.push((so) => { Discover.edit = null; Discover.drawSlot(so); });
-  // a song page drawn before this ran
-  if (typeof S !== 'undefined' && S.view?.song && document.getElementById('song-moment') && !document.querySelector('#song-moment .dsc-moment')) Discover.drawSlot(S.view.song);
+  Hooks.song.push(() => { Discover.edit = null; }); // the song page plays the whole song; its edit form (app.js SongEdit) holds title / moment / scenes
 })();
 document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && Pick.el) Pick.close(null); });

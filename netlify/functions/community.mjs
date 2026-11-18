@@ -26,7 +26,7 @@ const GENRES = ['jpop', 'rock', 'anime', 'citypop', 'kpop', 'western', 'hiphop',
  *  Returns only the keys present in the body, so a PUT without them keeps the stored values; moment: null removes it. */
 const SCENES = ['night', 'morning', 'rain', 'drive', 'work', 'heartbreak', 'cheer', 'sleepless', 'season', 'love', 'cry', 'walk',
   'commute', 'focus', 'workout', 'dance', 'party', 'karaoke', 'chill', 'healing', 'bath', 'cafe', 'sunset', 'travel',
-  'summer', 'winter', 'youth', 'nostalgia', 'friends', 'alone', 'midnight', 'brave'];
+  'summer', 'winter', 'youth', 'nostalgia', 'friends', 'alone', 'midnight', 'brave', 'family', 'festival', 'wafu'];
 function momentFields(b) {
   const out = {};
   if ('moment' in b) {

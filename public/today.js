@@ -11,7 +11,7 @@
   const I = {
     // いいね: thumbs up
     get: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 10.5v9H4.8a1.3 1.3 0 0 1-1.3-1.3v-6.4c0-.7.6-1.3 1.3-1.3z"/><path d="M7.5 10.5 11 3.8a2 2 0 0 1 2.9 1.9l-.5 3.6h4.9a2 2 0 0 1 2 2.4l-1.3 6.2a2 2 0 0 1-2 1.6H7.5"/></svg>',
-    // ハート (= the former ありがとう: it reaches every recommender and grows the 布教の木)
+    // ハート (= the former ありがとう: it reaches every recommender and grows the ひろがり)
     thx: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.2s-7.8-4.6-7.8-10.3A4.3 4.3 0 0 1 12 7.4a4.3 4.3 0 0 1 7.8 2.5c0 5.7-7.8 10.3-7.8 10.3z"/></svg>',
     wkr: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="5.5"/><circle cx="15" cy="12" r="5.5"/></svg>',
     cmt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.6c0 4-3.6 7-8 7-1.2 0-2.3-.2-3.3-.6L4 19.5l1.3-3.6C4.5 14.7 4 13.2 4 11.6c0-4 3.6-7 8-7s8 3 8 7z"/></svg>',
@@ -184,7 +184,8 @@
         }
         if (best !== focus) {
           focus?.classList.remove('focus'); best?.classList.add('focus'); focus = best;
-          const img = best?.querySelector('.tdy-art img'); if (img) Backdrop.set(img.currentSrc || img.src);
+          const img = best?.querySelector('.tdy-art img');
+          clearTimeout(this.bdT); if (img) this.bdT = setTimeout(() => Backdrop.set(img.currentSrc || img.src), 400); // repaint the big background only once scrolling settles
         }
         if (dots) { const max = el.scrollWidth - el.clientWidth; dots.style.width = (max > 0 ? 18 + (el.scrollLeft / max) * 82 : 100) + '%'; }
       };
@@ -211,9 +212,9 @@
         <div id="shelves"><div class="loading" style="padding:28px 0"><span class="spinner"></span> 読み込み中…</div></div>
         ${rec.length ? `<details class="recent"><summary>履歴（${rec.length}）</summary>${Recent.html()}</details>` : ''}
       </div>`);
-      const fresh = Date.now() - (this.songsAt || 0) > 60000; // new recommendations show up without a reload
-      if (fresh) this.songsAt = Date.now();
-      Songs.load(fresh).then(() => { if (location.pathname === '/' && !location.hash) this.drawList(); });
+      // fresh counts (comments / bookmarks / new posts) each time home opens; the list already in memory is drawn first
+      if (Songs.list) this.drawList();
+      Songs.load(true).then(() => { if (location.pathname === '/' && !location.hash) this.drawList(); });
       Promise.all([Social.loadGallery(), Songs.load(), Api.connected() ? Follows.load() : null, partyList().then((l) => { Parties.live = l; }).catch(() => {})])
         .then(() => { if (location.pathname === '/' && !location.hash) drawShelves(); });
       setTimeout(() => Player.load(), 800); // the YouTube player script is ready before the first 聴いてみる

@@ -1,4 +1,4 @@
-/* Share MUSIC — Stage 4 — 布教の木 (how a recommendation spread from person to person).
+/* Share MUSIC — Stage 4 — ひろがり (how a recommendation spread from person to person).
  * Plugs into app.js through Hooks (see the top of app.js). Loaded before app.js; only refer to app.js globals inside functions.
  *   - song page:   #song-spread  <- the song's tree (GET /api/spread?sid=)
  *   - profile/me:  #prof-extra   <- appends "あなたのおすすめが ○段階で ○人に届いた" (GET /api/spread?user=)
@@ -77,7 +77,7 @@ const Spread = (() => {
     if (!t.root && so.byId) t.root = { id: so.byId, name: so.by || '' };
     const f = build(t);
     if (!f.people) { el.innerHTML = ''; return; }
-    el.innerHTML = `<div class="label"><b>${IC.tree}</b> 布教の木</div>
+    el.innerHTML = `<div class="label"><b>${IC.tree}</b> ひろがり</div>
       <div class="spr-card">
         <div class="spr-sum">この曲は <b>${f.people}人</b> に届きました${f.depth > 1 ? `<span class="spr-dep">（${f.depth}段階）</span>` : ''}</div>
         <div class="spr-scroll">${draw(f, t.root?.id)}</div>

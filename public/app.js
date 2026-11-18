@@ -1280,11 +1280,13 @@ function drawSong() {
       <button class="ibtn subtle" data-act="report" data-kind="s" title="通報" aria-label="運営に通報">${ICON.flag}</button>
       <span class="spacer"></span><span id="song-owner"></span>
     </div>
+    <a class="btn accent ytm-open" href="https://music.youtube.com/watch?v=${esc(so.videoId)}" target="_blank" rel="noopener">YouTube Music で開く ${ICON.ext}</a>
     <div id="song-edit"></div>
-    <div id="song-moment"></div><div id="song-reacts"></div>
+    ${so.head ? `<h2 class="song-head">${esc(so.head)}</h2>` : ''}
+    ${(window.Discover?.sceneTags?.(so)) ? `<div class="song-scenes">${Discover.sceneTags(so)}</div>` : ''}
+    <div id="song-reacts"></div>
     ${so.desc ? `<div class="intro">${esc(so.desc)}</div>` : ''}
     ${(so.also || []).some((x) => x.desc) ? `<div class="label"><b>♪</b> みんなのおすすめポイント</div><div class="alsonotes">${(so.also || []).filter((x) => x.desc).map((x) => `<div class="alsonote">${Avatars.chip(x.id, x.name)}<p>${esc(x.desc)}</p></div>`).join('')}</div>` : ''}
-    <a class="btn accent ytm-open" href="https://music.youtube.com/watch?v=${esc(so.videoId)}" target="_blank" rel="noopener">YouTube Music で開く ${ICON.ext}</a>
     <div class="hint">再生すると、下の再生パネルの「MV」でMVに切り替えたり、「歌詞」で歌詞を表示したりできます。${tracks[0].embed ? '' : 'この曲の音源はこのページで再生できないため、MVを探して再生します。'}</div>
     <div class="label"><b>${ICON.comment}</b> コメント<span id="cmt-count"></span></div>
     <div id="comments"><div class="loading" style="padding:16px 0"><span class="spinner"></span></div></div>
@@ -1310,10 +1312,14 @@ function drawSong() {
 const SongEdit = {
   open() {
     const so = S.view.song, el = $('#song-edit'); if (!el) return;
+    if (window.Discover) Discover.edit = { head: so.head || '', moment: so.moment ? { ...so.moment } : null, scenes: [...(so.scenes || [])] };
     el.innerHTML = `<div class="sheet stack" style="margin-top:18px">
-      <b>おすすめ曲を編集</b>
+      <div><b>おすすめ曲を編集</b></div>
+      ${window.Discover ? `<label class="small muted" for="se-head">タイトル（ホームに大きく表示されます）</label><input class="input" id="se-head" maxlength="60" placeholder="例：夜の帰り道、これを聴いてほしい" value="${esc(so.head || '')}">` : ''}
       <label class="small muted">曲名</label><input class="input" id="se-title" maxlength="120" value="${esc(so.title)}">
       <label class="small muted">アーティスト</label><input class="input" id="se-artist" maxlength="80" value="${esc(so.artist)}">
+      ${window.Discover ? `<label class="small muted">どこから流すか（「聴いてみる」で流れる場所）</label>${Discover.momentField(Discover.edit.moment, 'dsc-e-moment', true)}
+      <label class="small muted">場面（3つまで）</label>${Discover.scenePicker('dsc-e-scenes', Discover.edit.scenes)}` : ''}
       <label class="small muted">ジャンル（必須・3つまで）</label>${genrePicker('se-genres', genresOf(so))}
       <label class="small muted">紹介文</label><textarea class="textarea" id="se-desc" maxlength="300">${esc(so.desc || '')}</textarea>
       <div class="row wrap-ok"><button class="btn quiet sm danger" data-act="song-page-del">この曲の掲載を削除</button><span class="spacer"></span><button class="btn quiet sm" data-act="song-edit-cancel">やめる</button><button class="btn accent" data-act="song-edit-save">保存</button></div>
@@ -1327,10 +1333,11 @@ const SongEdit = {
     try {
       const h = await Social.headers(); if (!h) throw new AuthError('ログインしてください');
       const r = await fetch('/api/songs?sid=' + encodeURIComponent(so.sid), { method: 'PUT', headers: { ...h, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: $('#se-title').value.trim(), artist: $('#se-artist').value.trim(), desc: $('#se-desc').value.trim(), genres }) });
+        body: JSON.stringify({ title: $('#se-title').value.trim(), artist: $('#se-artist').value.trim(), desc: $('#se-desc').value.trim(), genres,
+          ...(window.Discover && Discover.edit ? { head: ($('#se-head')?.value || '').trim(), moment: Discover.edit.moment, scenes: Discover.edit.scenes } : {}) }) });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.error || '保存できませんでした');
-      Object.assign(so, j.item); S.view.p.title = so.title; S.view.tracks[0].name = so.title; S.view.tracks[0].artist = so.artist;
+      Object.assign(so, j.item); if (!j.item?.moment) delete so.moment; if (window.Discover) Discover.edit = null; S.view.p.title = so.title; S.view.tracks[0].name = so.title; S.view.tracks[0].artist = so.artist;
       Songs.list = null; toast('保存しました'); drawSong();
     } catch (e) { toast(errText(e), 5000); btn.disabled = false; }
   },
@@ -1493,6 +1500,7 @@ async function toggleSongBookmark(btn) {
   try {
     const r = await Social.toggleBm(so, 's');
     btn.classList.toggle('on', r.on); btn.querySelector('em').textContent = r.bm ? r.bm : '';
+    (Songs.list || []).forEach((x) => { if (x.sid === so.sid) x.bm = r.bm || 0; });
     toast(r.on ? 'ブックマークしました' : 'ブックマークを外しました');
   } catch (e) { toast(errText(e), 5000); if (e instanceof AuthError) renderConn(); }
   btn.disabled = false;
@@ -1504,6 +1512,7 @@ async function toggleBookmark(btn) {
   try {
     const r = await Social.toggleBm(p);
     btn.classList.toggle('on', r.on); btn.querySelector('em').textContent = r.bm ? r.bm : '';
+    (Songs.list || []).forEach((x) => { if (x.sid === so.sid) x.bm = r.bm || 0; });
     toast(r.on ? 'ブックマークしました' : 'ブックマークを外しました');
   } catch (e) { toast(errText(e), 5000); if (e instanceof AuthError) renderConn(); }
   btn.disabled = false;
@@ -1563,33 +1572,22 @@ const Player = {
     if (!this.yt) {
       this.yt = new window.YT.Player('ytplayer', {
         width: '356', height: '200', videoId: vid,
-        playerVars: { autoplay: 1, playsinline: 1, rel: 0, ...(this.startMuted ? { mute: 1 } : {}) },
+        playerVars: { autoplay: 1, playsinline: 1, rel: 0 },
         events: {
           onReady: (e) => e.target.playVideo(),
           onStateChange: (e) => {
             this.playing = e.data === 1 || (e.data === 3 && this.playing);
-            if (e.data === 1 && this._unmute) { this._unmute = false; this.unmuteNow(true); }
             if (e.data === 0 && !Party.isGuest()) this.next(true);
             this.drawState();
           },
           onError: () => this.failed(),
         },
       });
-      this._unmute = !!this.startMuted;
     } else {
       this.yt.loadVideoById(vid);
     }
-    this.startMuted = false;
     if (Lyrics.open) Lyrics.show(t);
     if (!store.get('mvHint')) setTimeout(() => { if (document.body.classList.contains('dsc-pv-open') || store.get('mvHint')) return; store.set('mvHint', 1); toast('再生バーの「MV」でMVに、「歌詞」で歌詞に切り替えられます', 4500); }, 1200);
-  },
-  /** a player that had to start muted (phones block sound autoplay in a new embed): turn the sound on.
-   *  auto=true: right after it started; if the phone refuses (pauses / stays muted) keep playing muted and let the user tap. */
-  unmuteNow(auto) {
-    const y = this.yt; if (!y?.unMute) return;
-    y.unMute(); y.setVolume?.(100);
-    if (!y.getPlayerState || y.getPlayerState() !== 1) y.playVideo?.();
-    if (auto) setTimeout(() => { if (this.yt !== y) return; if (y.getPlayerState?.() !== 1) { y.mute?.(); y.playVideo?.(); } }, 600);
   },
   failed() {
     const t = this.track; if (!t) return;
@@ -1870,7 +1868,7 @@ function renderHelp() {
       ${step(1, ICON.plus, 'おすすめする', '画面下のまんなかの<b>「＋」</b>から「おすすめの曲」を選び、好きな1曲を検索します。ホームに大きく出る<b>タイトル</b>と、「夜の帰り道」「雨」などの場面、ひとことを添えましょう。')}
       ${step(2, ICON.note, 'ここを聴いて', '<b>どこから流すか</b>を必ず選びます。歌詞があれば行をタップするだけ。見た人が<b>「聴いてみる」</b>を押すと、その瞬間から約20秒すぐに流れます。全部聴きたいときは「曲の詳細へ」から。')}
       ${step(3, ICON.thanks, 'いいね と ハート', 'いいなと思ったら<b>いいね</b>、教えてくれてうれしかったら<b>ハート</b>。ハートは「ありがとう」の気持ちとして、おすすめした人みんなに届きます。')}
-      ${step(4, ICON.tree, '布教の木', 'ハートや「私もおすすめ」で、曲が<b>誰から誰へ届いたか</b>がつながっていきます。曲のページで、あなたのおすすめがどこまで広がったかを木の形で見られます。')}
+      ${step(4, ICON.tree, 'ひろがり', 'ハートや「私もおすすめ」で、曲が<b>誰から誰へ届いたか</b>がつながっていきます。曲のページで、あなたのおすすめがどこまで広がったかを木の形で見られます。')}
       ${step(5, ICON.topic, '今週のお題', '毎週ひとつのお題に、<b>1人1曲</b>で答えます（あとから差し替えOK）。画面下の「お題」から、みんなの答えも聴けます。')}
     </ol>
     <div class="sheet flat" style="margin-top:6px">
@@ -1969,7 +1967,7 @@ document.addEventListener('click', async (ev) => {
     case 'cmt-del': Comments.del(el); break;
     case 'gp': toggleGenre(el); break;
     case 'song-edit': SongEdit.open(); break;
-    case 'song-edit-cancel': $('#song-edit').innerHTML = ''; break;
+    case 'song-edit-cancel': $('#song-edit').innerHTML = ''; if (window.Discover) Discover.edit = null; break;
     case 'song-edit-save': SongEdit.save(el); break;
     case 'song-page-del': Songs.del(S.view.song.sid); break;
     case 'bio-edit': Bio.edit(); break;

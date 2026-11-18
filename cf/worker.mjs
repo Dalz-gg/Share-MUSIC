@@ -69,7 +69,7 @@ export default {
       if (!match(p)) continue;
       const res = req.method === 'GET' && CACHEABLE(p) ? await cached(req, env, handler, hctx) : await handler(req, hctx);
       // a write changes the public lists: drop their cached copies
-      if (req.method !== 'GET' && res.status < 400 && /^\/api\/(gallery|like|songs|comments|admin\/act|cover|posts|profile|party-ctl)/.test(p)) {
+      if (req.method !== 'GET' && res.status < 400 && /^\/api\/(gallery|like|songs|comments|bookmarks|song-react|admin\/act|cover|posts|profile|party-ctl)/.test(p)) {
         ctx.waitUntil(env.DB.prepare("DELETE FROM kv WHERE store = 'cache' AND (k LIKE '%/api/gallery%' OR k LIKE '%/api/songs%' OR k LIKE '%/api/cover-info%' OR k LIKE '%/p/%' OR k LIKE '%/s/%' OR k LIKE '%/c/%' OR k LIKE '%/u/%' OR k LIKE '%/party/%')").run().catch(() => {}));
       }
       const h = new Headers(res.headers); h.delete('netlify-cdn-cache-control');

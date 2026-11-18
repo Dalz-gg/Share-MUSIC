@@ -17,45 +17,47 @@
 .tdy-home .shelf:has([data-act="see-all"][data-tab="song"]) { display: none; }
 
 .tdy-list.tdy-rail { display: flex; gap: 14px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none;
-  margin: 0 -16px; padding: 10px calc(50% - min(39vw, 156px)) 26px; perspective: 1100px; -webkit-overflow-scrolling: touch; }
+  margin: 0 -16px; padding: 10px calc(50% - min(39vw, 156px)) 26px; -webkit-overflow-scrolling: touch; }
 .tdy-rail::-webkit-scrollbar { display: none; }
 .tdy-rail > * { flex: none; width: min(78vw, 312px); scroll-snap-align: center; }
-.tdy-rail > .tdy-card { transform: rotateY(calc(var(--d, 0) * -16deg)) scale(calc(1 - var(--ad, 0) * .09)) translateZ(0); opacity: calc(1 - var(--ad, 0) * .32);
-  transition: transform .12s linear, opacity .12s linear; will-change: transform; }
+.tdy-rail > .tdy-card { transform: translateY(calc(var(--ad, 0) * 14px)) rotate(calc(var(--d, 0) * 2.5deg)) scale(calc(1 - var(--ad, 0) * .08)); opacity: calc(1 - var(--ad, 0) * .3);
+  transition: transform .12s linear, opacity .12s linear; }
 .tdy-prog { height: 3px; width: 92px; margin: -12px auto 6px; border-radius: 3px; background: var(--glass-2); overflow: hidden; }
 .tdy-prog i { display: block; height: 100%; width: 18%; border-radius: 3px; background: var(--grad); transition: width .15s linear; }
 
 .tdy-card { position: relative; border-radius: 26px; overflow: hidden; isolation: isolate; display: flex; flex-direction: column;
   background: linear-gradient(170deg, color-mix(in srgb, var(--g2) 14%, transparent), transparent 55%), var(--glass);
   border: 1px solid var(--frost-edge, rgba(255,255,255,.09));
-  box-shadow: inset 0 1px 0 var(--frost-hi, rgba(255,255,255,.08)), 0 14px 36px rgba(0,0,0,.28);
-  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  background-color: color-mix(in srgb, var(--card) 82%, transparent);
+  box-shadow: inset 0 1px 0 var(--frost-hi, rgba(255,255,255,.08)), 0 12px 28px rgba(0,0,0,.26);
   animation: tdyIn .8s var(--spring, cubic-bezier(.25,1.4,.45,1)) both; animation-delay: calc(var(--i, 0) * 70ms); }
 @keyframes tdyIn { from { opacity: 0; transform: translateX(60px) rotate(4deg) scale(.92); } }
 /* the centred card: a slowly turning gradient rim + lift */
 .tdy-card::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1.5px; z-index: 3; pointer-events: none; opacity: 0; transition: opacity .5s ease;
   background: conic-gradient(from var(--tdy-a), var(--g1), var(--g2), var(--g3), var(--g1));
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-  animation: tdyRim 5s linear infinite; }
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
 @keyframes tdyRim { to { --tdy-a: 360deg; } }
-.tdy-card.focus::before, .tdy-card.now::before { opacity: 1; }
-.tdy-card.focus { box-shadow: inset 0 1px 0 var(--frost-hi, rgba(255,255,255,.08)), 0 20px 50px var(--grad-glow, rgba(133,114,214,.32)); }
+.tdy-card.focus::before, .tdy-card.now::before { opacity: 1; animation: tdyRim 5s linear infinite; }
+.tdy-card.focus { box-shadow: inset 0 1px 0 var(--frost-hi, rgba(255,255,255,.08)), 0 16px 36px var(--grad-glow, rgba(133,114,214,.3)); }
 
 /* cover: jacket + a record sliding out and spinning */
 .tdy-cover { position: relative; display: block; width: 100%; height: 196px; padding: 0; border: 0; background: none; cursor: pointer; overflow: hidden; -webkit-tap-highlight-color: transparent; }
-.tdy-bg { position: absolute; inset: -30px; background: center / cover no-repeat; filter: blur(34px) saturate(1.6); opacity: .55; transform: scale(1.1); transition: transform 1.2s ease, opacity .6s; }
-.tdy-card.focus .tdy-bg { transform: scale(1.25); opacity: .7; }
+/* soft colour from the jacket without a blur filter (blur layers use a lot of memory on iPhone): the image zoomed far in */
+.tdy-bg { position: absolute; inset: 0; background: center / 900% no-repeat; opacity: .5; transition: opacity .6s, background-size 1.2s ease; }
+.tdy-bg::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 40%, color-mix(in srgb, var(--card) 70%, transparent)); }
+.tdy-card.focus .tdy-bg { opacity: .7; background-size: 1100%; }
 .tdy-art { position: absolute; left: 18px; top: 20px; width: 156px; height: 156px; z-index: 2; border-radius: 12px; overflow: hidden; background: var(--card);
   box-shadow: 10px 12px 28px rgba(0,0,0,.45); transition: transform .7s var(--spring, ease); }
 .tdy-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .tdy-art img.lb { transform: scale(1.34); }
 .tdy-disc { position: absolute; left: 34px; top: 26px; width: 144px; height: 144px; z-index: 1; border-radius: 50%;
   background: repeating-radial-gradient(circle, #121211 0 1.5px, #1d1d1b 1.5px 3px), #111; box-shadow: 0 8px 22px rgba(0,0,0,.45);
-  transition: left .9s cubic-bezier(.2,.8,.2,1); animation: spin 4.5s linear infinite; animation-play-state: paused; }
+  transition: left .9s cubic-bezier(.2,.8,.2,1); }
 .tdy-disc::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(from 30deg, transparent 0 7%, rgba(255,255,255,.14) 11%, transparent 17% 57%, rgba(255,255,255,.1) 61%, transparent 67%); }
 .tdy-lbl { position: absolute; inset: 0; margin: auto; width: 40%; height: 40%; border-radius: 50%; overflow: hidden; background: var(--grad); box-shadow: 0 0 0 3px rgba(0,0,0,.55); }
 .tdy-lbl img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.34); }
-.tdy-card.focus .tdy-disc, .tdy-card.now .tdy-disc, .tdy-grid .tdy-card.seen .tdy-disc { left: 112px; animation-play-state: running; }
+.tdy-card.focus .tdy-disc, .tdy-card.now .tdy-disc, .tdy-grid .tdy-card.seen .tdy-disc { left: 112px; }
+.tdy-card.focus .tdy-disc, .tdy-card.now .tdy-disc { animation: spin 4.5s linear infinite; }
 .tdy-card.focus .tdy-art { transform: rotate(-2deg) translateY(-2px); }
 .tdy-cover:active .tdy-art { transform: scale(.95); transition-duration: .1s; }
 .tdy-cta { position: absolute; right: 14px; bottom: 14px; z-index: 3; display: inline-flex; align-items: center; gap: 7px; padding: 9px 16px 9px 9px; border-radius: 999px;

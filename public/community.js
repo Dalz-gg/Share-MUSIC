@@ -141,6 +141,7 @@ const Comments = {
     const l = document.getElementById('cmt-list'); if (l) l.innerHTML = this.html();
     const n = this.items.filter((x) => !x.deleted).length;
     const c = document.getElementById('cmt-count'); if (c) c.textContent = n ? `（${n}）` : '';
+    if (this.kind === 's') (Songs.list || []).forEach((x) => { if (x.sid === this.id) x.comments = n; }); // home cards show it right away
   },
   async del(btn) {
     if (!confirm('このコメントを削除しますか？')) return;

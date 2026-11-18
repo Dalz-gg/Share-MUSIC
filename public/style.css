@@ -1599,3 +1599,7 @@ body.sheet-open .tabbar .plus, body.sheet-open .tabbar .compose:active .plus { t
 .tabbar .compose .plus svg { transition: transform .45s var(--spring); }
 body.post-open .tabbar .compose .plus svg { transform: rotate(135deg); }
 body.post-open .tabbar { z-index: 41; }
+
+.song-head { margin: 18px 0 4px; font-family: var(--display); font-size: 22px; font-weight: 900; line-height: 1.45; }
+.song-scenes { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 2px; }
+.ytm-open { margin-top: 14px; }
