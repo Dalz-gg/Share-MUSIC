@@ -132,7 +132,7 @@
       const txt = h.text.length > 70 ? h.text.slice(0, 68) + '…' : h.text;
       return `<article class="tdy-card" data-sid="${esc(s.sid)}" style="--i:${Math.min(i, 7)}">
         <button class="tdy-cover" data-act="tdy-play" data-sid="${esc(s.sid)}" aria-label="${esc(s.title)} を聴いてみる">
-          ${art ? `<span class="tdy-bg">${SoftArt.html(art)}</span>` : ''}
+          <span class="tdy-bg"></span>
           <span class="tdy-disc" aria-hidden="true"><span class="tdy-lbl">${art ? `<img src="${esc(art)}" alt="" loading="lazy">` : ''}</span></span>
           <span class="tdy-art">${art ? `<img src="${esc(art)}" alt="" loading="lazy">` : ''}</span>
           <span class="tdy-cta"><span class="pi">${ICON.play}</span>聴いてみる</span>
