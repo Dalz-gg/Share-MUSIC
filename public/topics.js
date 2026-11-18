@@ -34,26 +34,20 @@ const Topics = {
   icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 3.5V17A2.5 2.5 0 0 1 4 14.5z"/><path d="M13.5 7.5v5.2"/><circle cx="11.6" cy="12.8" r="1.9"/><path d="M13.5 7.5l2.5.8"/></svg>',
 
   /* ---------- playing an answer ---------- */
-  asSong(a) {
-    return { sid: a.sid || '', videoId: a.id, title: a.title, artist: a.artist, art: a.art || '', thumb: a.thumb, d: a.d || 0, embed: true,
-      moment: a.moment || null, desc: a.note || '', by: a.name, byId: a.uid };
+  asSong(a, week) {
+    return { sid: a.sid || undefined, videoId: a.id, title: a.title, artist: a.artist, art: a.art || '', thumb: a.thumb, d: a.d || 0, embed: true,
+      moment: a.moment || null, desc: a.note || '', by: a.name, byId: a.uid, detail: this.link(a, week) };
   },
+  /** detail page of an answer: its recommended-song page when it is one, otherwise the answer page */
+  link(a, week) { return a.sid ? '/s/' + a.sid : `/topic/${week || this.cur?.week || ''}/${a.uid}`; },
+  weekOf(key) { return key === 'cur' ? this.cur?.week : key; },
   play(key, i) {
     const list = this.lists[key] || [], a = list[i]; if (!a) return;
-    if (window.Discover?.preview) { try { window.Discover.preview(this.asSong(a)); return; } catch (e) { console.error(e); } }
-    // without the preview player: queue every answer in the shared player, starting at this one
-    const tracks = list.map((x) => ({ id: x.id, name: x.title, artist: x.artist, d: x.d || 0, embed: true, thumb: this.cover(x) }));
-    if (Player.idx >= 0) Player.close();
-    S.view = { id: 'topic:' + key, kind: 'topic', p: { id: 'topic', title: '今週のお題', image: tracks[i].thumb }, tracks };
-    Player.order = null; Player.play(i);
-    const t = a.moment?.t || 0;
-    if (t > 0) { // jump to "ここを聴いて" once the video is playing
-      let n = 0; const iv = setInterval(() => {
-        if (++n > 40 || Player.idx !== i) return clearInterval(iv);
-        if (Player.yt?.getPlayerState?.() === 1) { clearInterval(iv); Player.yt.seekTo(t, true); }
-      }, 300);
-    }
+    const so = this.asSong(a, this.weekOf(key));
+    if (window.Discover?.preview) { try { window.Discover.preview(so); return; } catch (e) { console.error(e); } }
+    go(so.detail);
   },
+  detail(key, i) { const a = (this.lists[key] || [])[i]; if (a) go(this.link(a, this.weekOf(key))); },
 
   /* ---------- pieces ---------- */
   tile(a, key, i) {
@@ -64,15 +58,20 @@ const Topics = {
       <span class="tpc-tby">${esc(a.name)}</span></button>`;
   },
   card(a, key, i, me) {
-    const line = a.moment?.line || '';
-    return `<article class="tpc-ans ${a.uid === me ? 'me' : ''}">
-      <button class="tpc-ans-art" data-act="tpc-play" data-k="${esc(key)}" data-i="${i}" aria-label="${esc(a.title)} を試聴"><img src="${esc(this.cover(a))}" alt="" loading="lazy"><i class="tpc-pl" aria-hidden="true">${ICON.play}</i></button>
-      <div class="tpc-ans-body">
-        ${line ? `<p class="tpc-line">「${esc(line)}」</p>` : ''}
-        <div class="tpc-song"><b>${esc(a.title)}</b><span>${esc(a.artist)}${a.moment?.t ? ` ・ ${this.fmtT(a.moment.t)}〜` : ''}</span></div>
-        ${a.note ? `<p class="tpc-note">${esc(a.note)}</p>` : ''}
-        <div class="tpc-by">${Avatars.chip(a.uid, a.name)}<span class="tiny muted">${ago(a.ts)}</span>${a.sid ? `<a class="tpc-songlink tiny" href="/s/${esc(a.sid)}" data-act="go" data-to="/s/${esc(a.sid)}">曲のページ</a>` : ''}</div>
-      </div></article>`;
+    const line = a.moment?.line || '', t = a.moment?.t;
+    return `<article class="tpc-ans ${a.uid === me ? 'me' : ''}" data-act="tpc-play" data-k="${esc(key)}" data-i="${i}" role="button" tabindex="0" aria-label="${esc(a.title)} を聴いてみる" style="--i:${Math.min(i, 8)}">
+      <div class="tpc-ans-top"><span class="tpc-no">No.${String(i + 1).padStart(2, '0')}</span>${Avatars.html(a.uid, a.name, 'sm')}<b class="tpc-who">${esc(a.name)}${a.uid === me ? '（あなた）' : ''}</b><span class="tpc-ago">${ago(a.ts)}</span></div>
+      <p class="tpc-line ${line ? '' : 'none'}">${line ? esc(line) : esc(a.title)}</p>
+      ${a.note ? `<p class="tpc-note">${esc(a.note)}</p>` : ''}
+      <div class="tpc-tear" aria-hidden="true"></div>
+      <div class="tpc-ans-bot">
+        <img class="tpc-thumb" src="${esc(this.cover(a))}" alt="" loading="lazy">
+        <span class="tpc-song"><b>${esc(a.title)}</b><span>${esc(a.artist)}</span></span>
+      </div>
+      <div class="tpc-btns"><span class="tpc-listen">${ICON.play}聴いてみる${t ? `<em>${this.fmtT(t)}〜</em>` : ''}</span>
+          <button class="tpc-det" data-act="tpc-detail" data-k="${esc(key)}" data-i="${i}" aria-label="${esc(a.title)} の詳細">詳細${a.sid ? '・コメント' : ''}<span aria-hidden="true">›</span></button>
+      </div>
+    </article>`;
   },
 
   /* ---------- home: compact card in #home-topic ---------- */
@@ -94,10 +93,8 @@ const Topics = {
     el.innerHTML = `<section class="tpc-home">
       <div class="tpc-head"><span class="tpc-kicker">${this.icon}今週のお題</span><span class="tpc-dates">${this.range(t)}</span></div>
       <a class="tpc-htitle" href="/topic" data-act="go" data-to="/topic">${esc(t.title)}</a>
-      <div class="tpc-sub">${list.length ? `${list.length}人が答えています` : 'まだ誰も答えていません。最初の1曲をどうぞ'} ・ 1人1曲</div>
-      ${list.length ? `<div class="tpc-strip">${list.slice(0, 12).map((a, i) => this.tile(a, 'cur', i)).join('')}</div>` : ''}
-      <div class="tpc-acts"><button class="btn sm tpc-cta" data-act="tpc-answer">${mine ? '答えを変える' : '答える'}</button>
-        <a class="btn quiet sm" href="/topic" data-act="go" data-to="/topic">みんなの答え ›</a></div>
+      <div class="tpc-sub">${list.length ? `${list.length}人が答えています` : 'まだ誰も答えていません'} ・ 1人1曲${mine ? ' ・ あなたも回答済み' : ''}</div>
+      <a class="btn sm tpc-cta tpc-see" href="/topic" data-act="go" data-to="/topic">みんなの選曲を見る<span aria-hidden="true">›</span></a>
     </section>`;
   },
 
@@ -172,6 +169,47 @@ const Topics = {
       <div class="label"><b>♪</b> みんなの答え${list.length ? `（${list.length}）` : ''}</div>
       ${list.length ? `<div class="tpc-list">${list.map((a, i) => this.card(a, week, i, me)).join('')}</div>` : '<div class="sheet flat center muted small">この週の答えはありませんでした</div>'}
     </div>`);
+  },
+  async answerPage(week, uid) {
+    setApp('<div class="loading"><span class="spinner"></span> 読み込み中…</div>');
+    const path = location.pathname;
+    let t;
+    try {
+      if (this.cur?.week === week) t = this.cur;
+      else { const r = await fetch('/api/topic?week=' + encodeURIComponent(week)); t = await r.json(); if (!r.ok) throw new Error(t.error || 'お題が見つかりませんでした'); }
+    } catch (e) { return setApp(`<div class="note bad" style="margin-top:24px">${esc(e.message)}</div>`); }
+    if (location.pathname !== path) return;
+    const a = (t.answers || []).find((x) => x.uid === uid);
+    if (!a) return setApp(`<div class="sheet stack" style="margin-top:28px"><b>この答えは見つかりませんでした</b><div><a class="btn sm" href="/topic" data-act="go" data-to="/topic">お題へ</a></div></div>`);
+    const cover = this.cover(a), back = t.past ? '/topic/' + week : '/topic';
+    const tr = { id: a.id, name: a.title, artist: a.artist, d: a.d || 0, embed: true, thumb: cover };
+    const keep = Player.idx >= 0 && Player.track?.id === a.id && S.view?.id === 'ta:' + week + ':' + uid;
+    if (!keep && Player.idx >= 0) Player.close();
+    S.view = keep ? S.view : { id: 'ta:' + week + ':' + uid, kind: 'ta', p: { id: 'ta-' + uid, title: a.title, owner: a.name, image: cover }, tracks: [tr] };
+    document.title = `${a.title} — お題「${t.title}」への答え | Share MUSIC`;
+    setApp(`<div class="tpc-page tpc-detail">
+      <a class="btn quiet sm back" href="${back}" data-act="go" data-to="${back}">← お題「${esc(t.title)}」</a>
+      <div class="tpc-dhead">
+        <div class="deckwrap">${Deck.html(S.view.p, 'vinyl')}</div>
+        <div class="tpc-dmeta">
+          <span class="tpc-kicker">${this.icon}${esc(t.title)} への答え</span>
+          <h1 class="tpc-dtitle">${esc(a.title)}</h1>
+          <div class="tpc-dartist">${esc(a.artist)}</div>
+          <div class="tpc-dby">${Avatars.chip(a.uid, a.name, { cls: 'lg' })}<span class="tiny muted">${ago(a.ts)}</span></div>
+        </div>
+      </div>
+      <div class="vactions">
+        <button class="playbig" data-act="play-all" aria-label="全部聴く">${ICON.play}</button>
+        <button class="ibtn mvbtn" data-act="play-mv" title="MVを見る">MV</button>
+        <span class="spacer"></span>
+      </div>
+      <a class="btn accent ytm-open" href="https://music.youtube.com/watch?v=${esc(a.id)}" target="_blank" rel="noopener">YouTube Music で開く ${ICON.ext}</a>
+      ${a.moment?.line ? `<blockquote class="tpc-dquote"><span class="k">ここを聴いて ${a.moment.t ? this.fmtT(a.moment.t) + '〜' : ''}</span>${esc(a.moment.line)}</blockquote>` : ''}
+      ${a.note ? `<div class="intro">${esc(a.note)}</div>` : ''}
+      ${a.sid ? `<a class="btn sm" href="/s/${esc(a.sid)}" data-act="go" data-to="/s/${esc(a.sid)}">おすすめ曲のページ（コメント・ブックマーク）›</a>` : ''}
+      <div class="row" style="margin-top:24px"><a class="btn quiet sm" href="${back}" data-act="go" data-to="${back}">← みんなの答えへ</a></div>
+    </div>`);
+    if (Player.idx >= 0) { Deck.setTrack(S.view.tracks[Player.idx]); Deck.setPlaying(Player.playing); }
   },
   async archivePage() {
     document.title = 'これまでのお題 — Share MUSIC';
@@ -348,6 +386,8 @@ const Topics = {
       if (path === '/topic/past') { this.archivePage(); return true; }
       const m = /^\/topic\/(\d{4}-W\d{2})$/.exec(path);
       if (m) { this.pastPage(m[1]); return true; }
+      const d = /^\/topic\/(\d{4}-W\d{2})\/(UC[\w-]{10,})$/.exec(path);
+      if (d) { this.answerPage(d[1], d[2]); return true; }
       return false;
     });
     Hooks.home.push(() => this.home());
@@ -355,6 +395,7 @@ const Topics = {
       switch (act) {
         case 'tpc-answer': this.openAnswer(); return true;
         case 'tpc-play': this.play(el.dataset.k, +el.dataset.i); return true;
+        case 'tpc-detail': this.detail(el.dataset.k, +el.dataset.i); return true;
         case 'tpc-search': this.search(); return true;
         case 'tpc-pick': this.pick(+el.dataset.i); return true;
         case 'tpc-moment': this.chooseMoment(); return true;

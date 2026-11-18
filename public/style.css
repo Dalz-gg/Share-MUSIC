@@ -1603,3 +1603,30 @@ body.post-open .tabbar { z-index: 41; }
 .song-head { margin: 18px 0 4px; font-family: var(--display); font-size: 22px; font-weight: 900; line-height: 1.45; }
 .song-scenes { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 2px; }
 .ytm-open { margin-top: 14px; }
+
+/* hamburger menu: a drawer from the right with every page */
+body.drawer-open .sheet-layer { z-index: 55; }
+.drawer { position: absolute; top: 0; right: 0; bottom: 0; width: min(84vw, 340px); display: flex; flex-direction: column;
+  padding: max(14px, env(safe-area-inset-top)) 10px max(14px, env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--card) 94%, transparent); border-left: 1px solid var(--frost-edge, rgba(255,255,255,.1));
+  box-shadow: -18px 0 50px rgba(0,0,0,.45); border-radius: 26px 0 0 26px;
+  transform: translateX(105%); transition: transform .42s cubic-bezier(.2,.9,.25,1.05); }
+.sheet-layer.on .drawer { transform: none; }
+.drawer-top { display: flex; align-items: center; justify-content: space-between; padding: 4px 6px 10px 12px; }
+.drawer-brand { font-family: var(--display); font-weight: 900; font-size: 17px; letter-spacing: .06em; background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.drawer-x { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: var(--glass); color: var(--ink); display: grid; place-items: center; cursor: pointer; }
+.drawer-x svg { width: 18px; height: 18px; }
+.drawer-scroll { flex: 1; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+.drawer .mh { font-size: 11px; font-weight: 700; letter-spacing: .14em; color: var(--sub); padding: 14px 12px 4px; }
+.drow { display: grid; grid-template-columns: 34px 1fr 14px; gap: 12px; align-items: center; width: 100%; padding: 8px 10px; border: 0; border-radius: 14px; background: transparent;
+  color: var(--ink); font: inherit; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  opacity: 0; transform: translateX(24px); transition: opacity .3s ease var(--d), transform .45s cubic-bezier(.2,.9,.25,1.15) var(--d), background-color .2s; }
+.sheet-layer.on .drow { opacity: 1; transform: none; }
+.drow:hover, .drow:active { background: var(--glass-2); }
+.drow.on { background: color-mix(in srgb, var(--g1) 18%, transparent); }
+.drow.on .mi { background: var(--grad); color: var(--on-grad, #fff); }
+.drow .mi { width: 34px; height: 34px; border-radius: 11px; background: var(--glass); display: grid; place-items: center; }
+.drow .mi svg { width: 18px; height: 18px; }
+.drow b { font-size: 14.5px; }
+.drow .chev { font-style: normal; font-size: 18px; color: var(--sub); }
+@media (prefers-reduced-motion: reduce) { .drawer, .drow { transition: none; } }

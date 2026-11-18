@@ -127,7 +127,7 @@ const Discover = {
   preview(song) {
     if (!song || !song.videoId) return;
     if (song.embed === false) return toast('この曲は権利者の設定でこのサイト内では再生できません');
-    const onPage = S.view?.song && S.view.song.sid === song.sid && S.view.tracks?.[0];
+    const onPage = song.sid && S.view?.song && S.view.song.sid === song.sid && S.view.tracks?.[0];
     if (!onPage && /^\/(p\/|bookmarks)/.test(location.pathname)) return go('/s/' + song.sid); // these pages own the play queue
     this.stop();
     Pick.close(null);
@@ -200,9 +200,9 @@ const Discover = {
   /** 曲の詳細: leave the card (music keeps playing in the dock) and open the song page */
   detail() {
     const pv = this.pv; if (!pv) return;
-    const sid = pv.song.sid, here = S.view?.song?.sid === sid && location.pathname === '/s/' + sid;
-    this.stop(); Player.close(); // the song page plays the whole song from its own play button
-    if (sid && !here) go('/s/' + sid); else if (here) { if (S.view?.kind !== 's') S.view = null; route(); }
+    const to = pv.song.detail || (pv.song.sid ? '/s/' + pv.song.sid : ''), here = !!to && location.pathname === to;
+    this.stop(); Player.close(); // the detail page plays the whole song from its own play button
+    if (to && !here) go(to); else if (here) { S.view = null; route(); }
   },
 
   /** end the preview card; pause=true also pauses a preview that was still inside its ~20 s */
@@ -232,7 +232,7 @@ const Discover = {
     const label = pv.full ? '全曲を再生中' : !st ? '試聴の準備中…' : st.est ? `推定サビから試聴 ・ ${this.fmt(st.t)}〜` : `ここを聴いて ・ ${this.fmt(st.t)}〜`;
     const ps = typeof recPeople === 'function' ? recPeople(so) : so.by ? [{ id: so.byId, name: so.by }] : [];
     const by = ps.length ? `${ps.slice(0, 2).map((x) => esc(x.name) + 'さん').join('、')}${ps.length > 2 ? `ほか${ps.length - 2}人` : ''}のおすすめ` : '';
-    const here = S.view?.song?.sid === so.sid && location.pathname === '/s/' + so.sid;
+    const here = location.pathname === (so.detail || '/s/' + so.sid);
     const scenes = this.sceneTags(so);
     el.innerHTML = `<div class="dsc-pv-card" role="dialog" aria-label="${esc(so.title)} の試聴">
       <button class="dsc-pv-close" data-act="dsc-pv-close" aria-label="試聴を閉じる">${ICON.close}</button>
@@ -256,7 +256,7 @@ const Discover = {
         <button class="dsc-pv-pp" data-act="p-toggle" id="dsc-pv-pp" aria-label="再生/一時停止">${Player.playing ? ICON.pause : ICON.play}</button>
       </div>
       <div class="dsc-pv-foot">
-        <button class="btn solid dsc-pv-detail" data-act="dsc-detail"><span class="t">${here ? '曲のページで全部聴く' : '曲の詳細へ（全部聴く・コメント）'}</span><span class="c" aria-hidden="true">›</span></button>
+        <button class="btn solid dsc-pv-detail" data-act="dsc-detail"><span class="t">${here ? 'このページで全部聴く' : so.sid ? '曲の詳細へ（全部聴く・コメント）' : '詳細へ（全部聴く）'}</span><span class="c" aria-hidden="true">›</span></button>
       </div>
     </div>`;
     document.body.classList.add('dsc-pv-open');

@@ -497,18 +497,36 @@ const ShareSheet = {
   open() {
     const el = this.el; if (!el) return;
     if (!el.hidden) return this.close();
-    const row = (d, attrs, icon, label, sub) => `<button class="mrow rise" style="--d:${d}ms" ${attrs}><span class="mi">${icon}</span><span><b>${label}</b>${sub ? `<small>${sub}</small>` : ''}</span><i class="chev">›</i></button>`;
+    const path = location.pathname, h = location.hash;
+    const on = (to) => (to === '/' ? path === '/' && !h : to === '/#help' ? h === '#help' : path === to || path.startsWith(to + '/'));
+    let d = 0;
+    const row = (attrs, to, icon, label) => `<button class="drow ${to && on(to) ? 'on' : ''}" style="--d:${(d += 25)}ms" ${attrs}><span class="mi">${icon}</span><b>${label}</b><i class="chev">›</i></button>`;
+    const go = (to, icon, label) => row(`data-act="sheet-go" data-to="${to}"`, to, icon, label);
     el.innerHTML = `<div class="sheet-bg" data-act="sheet-close"></div>
-      <div class="sheet-cards menu-sheet" role="dialog" aria-label="メニュー">
-        ${row(0, 'data-act="sheet-go" data-to="/#listen"', ICON.phones, '聴く', 'プレイリスト・リスニングパーティー・ミックステープ')}
-        ${row(20, 'data-act="sheet-go" data-to="/party"', ICON.party, 'リスニングパーティー', '')}
-        ${row(40, 'data-act="sheet-go" data-to="/bookmarks"', ICON.star, 'ブックマーク', '')}
-        <div class="mh">Share MUSIC</div>
-        ${row(60, 'data-act="sheet-go" data-to="/#help"', ICON.help, '使い方', '')}
-        ${row(80, 'data-act="sheet-link" data-to="/about"', ICON.info, 'このアプリについて', '')}
-        ${row(100, 'data-act="sheet-link" data-to="/privacy"', ICON.shield, 'プライバシーポリシー', '')}
-      </div>`;
-    el.hidden = false; document.body.classList.add('sheet-open');
+      <nav class="drawer" role="dialog" aria-label="メニュー">
+        <div class="drawer-top"><span class="drawer-brand">Share MUSIC</span><button class="drawer-x" data-act="sheet-close" aria-label="メニューを閉じる">${ICON.close}</button></div>
+        <div class="drawer-scroll">
+          <div class="mh">見つける</div>
+          ${go('/', ICON.home, 'ホーム')}
+          ${go('/picks', ICON.note, 'みんなのおすすめ')}
+          ${go('/topic', ICON.topic, '今週のお題')}
+          ${go('/c', ICON.chat, 'コミュニティ')}
+          <div class="mh">聴く</div>
+          ${go('/party', ICON.party, 'リスニングパーティー')}
+          ${row('data-act="listen-pl"', '', ICON.phones, 'みんなのプレイリスト')}
+          ${row('data-act="sheet-post"', '', ICON.pen, 'ミックステープをつくる')}
+          ${row('data-act="sheet-pick" data-to="/share/pl"', '', ICON.link, 'プレイリストを共有する')}
+          <div class="mh">あなた</div>
+          ${go('/me', ICON.user, 'マイページ')}
+          ${go('/notifs', ICON.bell, 'お知らせ')}
+          ${go('/bookmarks', ICON.star, 'ブックマーク')}
+          <div class="mh">Share MUSIC</div>
+          ${go('/#help', ICON.help, '使い方')}
+          ${row('data-act="sheet-link" data-to="/about"', '', ICON.info, 'このアプリについて')}
+          ${row('data-act="sheet-link" data-to="/privacy"', '', ICON.shield, 'プライバシーポリシー')}
+        </div>
+      </nav>`;
+    el.hidden = false; document.body.classList.add('sheet-open', 'drawer-open');
     requestAnimationFrame(() => el.classList.add('on'));
   },
   /** the ＋ button: a menu rises over the current screen — start a recommended song, a post or a playlist */
@@ -528,7 +546,7 @@ const ShareSheet = {
   },
   close() {
     const el = this.el; if (!el || el.hidden) return;
-    el.classList.remove('on'); document.body.classList.remove('sheet-open', 'post-open');
+    el.classList.remove('on'); document.body.classList.remove('sheet-open', 'post-open', 'drawer-open');
     setTimeout(() => { if (!el.classList.contains('on')) { el.hidden = true; el.innerHTML = ''; } }, 250);
   },
   async pick(to) {
@@ -574,7 +592,7 @@ function renderSharePage(kind) {
   const pl = kind === 'pl';
   document.title = (pl ? 'プレイリストを共有' : 'おすすめ曲を投稿') + ' — Share MUSIC';
   if (!Api.connected()) return renderShareHub();
-  setApp(`<button class="btn quiet sm back" data-act="go" data-to="${pl ? '/#listen' : '/'}">← ${pl ? '聴く' : 'ホーム'}</button>
+  setApp(`<button class="btn quiet sm back" data-act="go" data-to="/">← ホーム</button>
     <h1 class="pagetitle">${pl ? 'プレイリストを共有' : 'おすすめ曲を投稿'}</h1>
     <div id="me-body"></div>`);
   drawMeTab();
@@ -594,7 +612,7 @@ function route() {
   if (h.startsWith('#edit=')) return renderShare(h.slice(6));
   if (location.pathname === '/admin') return Admin.render();
   if (h === '#help') return renderHelp();
-  if (h === '#listen') return renderListen();
+  if (h === '#listen') { history.replaceState(null, '', '/'); return route(); } // the old 聴く page: everything is in the menu now
   if (location.pathname === '/me') return renderMe();
   if (location.pathname === '/search') return renderSearch();
   if (location.pathname === '/bookmarks') return renderBookmarks();
@@ -917,7 +935,7 @@ function renderMe() {
       <h1>${esc(pr.name || 'マイページ')}</h1>
       <div class="fcounts" id="fcounts">${Follows.countsHtml({})}</div>
       <div class="stats" id="me-stats">${statsHtml(['–', '–', '–'])}</div>
-      <div class="row wrap-ok me-links">${pr.id ? `<a class="btn sm" href="/u/${esc(pr.id)}" data-act="go" data-to="/u/${esc(pr.id)}">公開プロフィール</a>` : ''}<a class="btn sm" href="/bookmarks" data-act="go" data-to="/bookmarks">${ICON.star} ブックマーク</a><a class="btn sm" href="/#listen" data-act="go" data-to="/#listen">${ICON.phones} 聴く</a></div>
+      <div class="row wrap-ok me-links">${pr.id ? `<a class="btn sm" href="/u/${esc(pr.id)}" data-act="go" data-to="/u/${esc(pr.id)}">公開プロフィール</a>` : ''}<a class="btn sm" href="/bookmarks" data-act="go" data-to="/bookmarks">${ICON.star} ブックマーク</a></div>
     </div>
     <div class="bio-box" id="bio-box"></div>
     <div id="prof-extra"></div>
@@ -1849,7 +1867,7 @@ function mountListenEntry() {
   const app = $('#app'); if (!app || app.querySelector('.listen-entry')) return;
   app.insertAdjacentHTML('beforeend', `<a class="listen-entry" href="/#listen" data-act="go" data-to="/#listen"><span class="mi">${ICON.phones}</span><span><b>聴く</b><small>プレイリスト・リスニングパーティー・ミックステープ</small></span><i class="chev">›</i></a>`);
 }
-Hooks.home.push(mountListenEntry);
+
 
 /* =========================================================
  * Help (使い方) — the new flow, explained simply
@@ -1873,8 +1891,8 @@ function renderHelp() {
     </ol>
     <div class="sheet flat" style="margin-top:6px">
       <b class="ic-line">${ICON.phones} 聴く機能もそのまま使えます</b>
-      <div class="small muted" style="margin-top:4px">プレイリストの共有・リスニングパーティー・ミックステープは、ホームのいちばん下や右上のメニューの<b>「聴く」</b>にまとめました。</div>
-      <div style="margin-top:10px"><button class="btn sm" data-act="go" data-to="/#listen">聴くを開く</button></div>
+      <div class="small muted" style="margin-top:4px">プレイリストの共有・リスニングパーティー・ミックステープは、右上のメニュー（三本線）の<b>「聴く」</b>にまとめました。</div>
+      <div style="margin-top:10px"><button class="btn sm" data-act="menu">メニューを開く</button></div>
     </div>
     <div class="sheet" style="margin:22px 0">
       <b style="font-size:16px" class="ic-line">${ICON.device} ホーム画面に追加して使うのがおすすめ</b>
@@ -2018,7 +2036,7 @@ document.addEventListener('click', async (ev) => {
     case 'rec-new': ev.preventDefault(); ShareSheet.post(); break;
     case 'sheet-go': ShareSheet.close(); go(el.dataset.to); break;
     case 'sheet-link': ShareSheet.close(); location.href = el.dataset.to; break;
-    case 'listen-pl': S.homeTab = 'pl'; S.gsort = 'likes'; S.gq = ''; S.genre = ''; go('/search'); break;
+    case 'listen-pl': ShareSheet.close(); S.homeTab = 'pl'; S.gsort = 'likes'; S.gq = ''; S.genre = ''; go('/search'); break;
     case 'ly-seek': if (Player.yt?.seekTo) Player.yt.seekTo(+el.dataset.t, true); break;
     case 'play':
       if (el.closest('#bm-list') && S.view?.id !== 'bm') { if (Player.idx >= 0) Player.close(); S.view = S.bmView; }

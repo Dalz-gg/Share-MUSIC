@@ -197,15 +197,15 @@
       document.title = 'Share MUSIC';
       const rec = Recent.list();
       setApp(`<div class="tdy-home">
-        <div id="home-topic"></div>
         <section class="tdy" aria-labelledby="tdy-h">
           <div class="tdy-head">
-            <div><div class="eyebrow">Today's picks</div><h1 class="tdy-title" id="tdy-h">今日のおすすめ</h1></div>
+            <div><div class="eyebrow">Picks</div><h1 class="tdy-title" id="tdy-h">みんなのおすすめ</h1></div>
             <button class="tdy-seeall" data-act="go" data-to="/picks">すべて見る<span id="tdy-count"></span>${I.chev}</button>
           </div>
           <div id="tdy-list" class="tdy-list tdy-rail"><div class="loading" style="padding:28px 0"><span class="spinner"></span> 読み込み中…</div></div>
           <div class="tdy-prog" id="tdy-prog" aria-hidden="true"><i></i></div>
         </section>
+        <div id="home-topic"></div>
         ${Api.connected() ? '' : `<div class="tdy-login"><span>ログインすると、おすすめの投稿やハートが送れます。見る・聴くはログインなしでできます。</span><button class="btn sm solid" data-act="login">Googleでログイン</button></div>`}
         ${resumeNote()}
         ${Install.banner()}
