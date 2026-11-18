@@ -234,7 +234,7 @@ const Discover = {
     const by = ps.length ? `${ps.slice(0, 2).map((x) => esc(x.name) + 'さん').join('、')}${ps.length > 2 ? `ほか${ps.length - 2}人` : ''}のおすすめ` : '';
     const here = S.view?.song?.sid === so.sid && location.pathname === '/s/' + so.sid;
     const scenes = this.sceneTags(so);
-    el.innerHTML = `<div class="dsc-pv-card" role="dialog" aria-label="${esc(so.title)} の試聴" style="--pv-art:url('${esc(art)}')">
+    el.innerHTML = `<div class="dsc-pv-card" role="dialog" aria-label="${esc(so.title)} の試聴">${SoftArt.html(art, 'dsc-pv-bgc')}
       <button class="dsc-pv-close" data-act="dsc-pv-close" aria-label="試聴を閉じる">${ICON.close}</button>
       <div class="dsc-pv-deck ${Player.playing ? 'spin' : ''}" id="dsc-pv-deck">
         <span class="dsc-pv-disc"><span class="dsc-pv-lbl">${art ? `<img src="${esc(art)}" alt="">` : ''}<i></i></span></span>

@@ -458,3 +458,27 @@ const Social = {
     if (el && navigator.vibrate) try { navigator.vibrate(8); } catch { /* ignore */ }
   }, { passive: true });
 })();
+
+/* Blurred jacket colours that are light on memory (CSS blur on big layers can crash phone browsers):
+ * the image is shrunk to a few pixels on a tiny canvas and the canvas is stretched by CSS, which gives the same soft blur.
+ * Usage: <canvas class="soft-art" data-src="URL"></canvas> anywhere; it is painted automatically. */
+const SoftArt = {
+  html: (url, cls = '') => (url ? `<canvas class="soft-art ${cls}" width="48" height="48" data-src="${String(url).replace(/"/g, '&quot;')}" aria-hidden="true"></canvas>` : ''),
+  paint(c) {
+    if (c.dataset.done) return; c.dataset.done = '1';
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const s = document.createElement('canvas'); s.width = s.height = 12;
+        const sx = s.getContext('2d'); sx.imageSmoothingQuality = 'high'; sx.drawImage(img, 0, 0, 12, 12);
+        const x = c.getContext('2d'); x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
+        if ('filter' in x) x.filter = 'saturate(1.5) blur(3px)';
+        x.drawImage(s, -6, -6, 60, 60);
+        c.classList.add('on');
+      } catch { /* ignore */ }
+    };
+    img.src = c.dataset.src;
+  },
+  scan(root = document) { root.querySelectorAll?.('canvas.soft-art:not([data-done])').forEach((c) => SoftArt.paint(c)); },
+};
+new MutationObserver(() => SoftArt.scan()).observe(document.documentElement, { childList: true, subtree: true });
