@@ -1,6 +1,6 @@
 /* Share MUSIC service worker: network-first, falls back to cache when offline. */
-const CACHE = 'ps-v48';
-const SHELL = ['/', '/index.html', '/app.js', '/hooks.js', '/fx.js', '/media.js', '/community.js', '/posts.js', '/party.js', '/discover.js', '/css/discover.css', '/today.js', '/css/today.css', '/topics.js', '/css/topics.css', '/spread.js', '/css/spread.css', '/style.css', '/config.js', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/favicon.svg'];
+const CACHE = 'ps-v49';
+const SHELL = ['/', '/index.html', '/app.js', '/hooks.js', '/fx.js', '/media.js', '/community.js', '/admin.js', '/css/admin.css', '/posts.js', '/party.js', '/discover.js', '/css/discover.css', '/today.js', '/css/today.css', '/topics.js', '/css/topics.css', '/spread.js', '/css/spread.css', '/style.css', '/config.js', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/favicon.svg'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).catch(() => {})); self.skipWaiting(); });
 self.addEventListener('activate', (e) => {
   e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));

@@ -350,7 +350,7 @@ function renderTabbar() {
   const el = document.getElementById('tabbar'); if (!el) return;
   const path = location.pathname, h = location.hash;
   const hide = path === '/admin';
-  el.hidden = hide; document.body.classList.toggle('has-tabbar', !hide);
+  el.hidden = hide; document.body.classList.toggle('has-tabbar', !hide); document.body.classList.toggle('is-admin', hide);
   if (hide) return;
   const cur = h === '#help' || h === '#listen' ? '' : path === '/' && !h ? 'home' : path === '/topic' || path.startsWith('/topic/') ? 'topic'
     : path === '/c' || path.startsWith('/c/') ? 'c' : path === '/me' || path === '/bookmarks' ? 'me' : '';
@@ -410,7 +410,7 @@ const Notifs = {
       react: `${who}があなたの投稿に ${RX_ICON[n.r] || '♥'} しました${n.title ? `（「${esc(n.title.slice(0, 30))}」）` : ''}`,
     }[n.t] || Hooks.notif[n.t]?.(n, who, t) || '';
     const to = Hooks.notifLink[n.t]?.(n) || (n.t === 'follow' ? `/u/${n.fromId}` : n.kind === 'm' ? `/c/${n.id}` : n.kind === 's' ? `/s/${n.id}` : `/p/${n.id}`);
-    const sys = { topic: ICON.topic, spread: ICON.tree }[n.t];
+    const sys = { topic: ICON.topic, spread: ICON.tree, admin: ICON.bell }[n.t];
     const icon = n.t === 'like' ? '<span class="ni like">♥</span>' : sys && !n.fromId ? `<span class="ni like sys">${sys}</span>` : Avatars.html(n.fromId, n.from, 'ni');
     return `<button class="nrow ${isNew ? 'new' : ''}" data-act="go" data-to="${esc(to)}">${icon}
       <span class="nbody"><span class="nmsg">${msg}</span>${n.text ? `<span class="ntext">${esc(n.text)}</span>` : ''}<span class="ntime">${ago(n.at)}</span></span></button>`;
@@ -2006,7 +2006,7 @@ document.addEventListener('click', async (ev) => {
     case 'share-stop': stopShare(el); break;
     case 'adm-login': Admin.login(el); break;
     case 'adm-logout': Admin.token = null; Admin.data = null; Admin.render(); break;
-    case 'adm-tab': Admin.tab = el.dataset.tab; Admin.q = ''; Admin.draw(); window.scrollTo({ top: 0 }); break;
+    case 'adm-tab': Admin.tab = el.dataset.tab; Admin.q = ''; Admin.vis = 'all'; Admin.sel?.clear(); Admin.draw(); window.scrollTo({ top: 0 }); break;
     case 'adm-reload': Admin.stale = true; Admin.render(); break;
     case 'adm-user': Admin.user(el.dataset.id); break;
     case 'adm': Admin.act(el); break;

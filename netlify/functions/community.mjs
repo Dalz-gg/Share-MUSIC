@@ -14,6 +14,7 @@
 import { getStore } from '@netlify/blobs';
 import { notify, ownerOf, isBanned, BANNED_MSG } from './social.mjs';
 import { recordSpread } from './spread.mjs';
+import { adminWeeks, adminRemoveAnswer } from './topics.mjs';
 
 const API_KEY = 'AIzaSyA4gaZyYp09zqvc8jbBmjqJRruWDhh80mM';
 const SITE = globalThis.__SITE || 'https://playlist-share.netlify.app';
@@ -418,7 +419,24 @@ async function admin(req, path) {
     for (const cs of Object.values(comments)) for (const c of cs) { const x = u(c.chId, c.name); if (x) { x.comments++; x.last = Math.max(x.last, c.at || 0); } }
     for (const [id, b] of Object.entries(bans)) u(id, b.name);
     const log = await readJson(store, 'adminlog', []);
-    return json({ playlists: list.map((p) => ({ ...p, likes: likes['p:' + p.id] || 0 })), songs: songs.map((s) => ({ ...s, likes: likes['s:' + s.sid] || 0 })), comments, reports, posts, users: Object.values(users).sort((a, b) => b.last - a.last), log });
+    // お題: this week + recent weeks with every answer
+    const topics = await adminWeeks(store, 8).catch(() => []);
+    for (const w of topics) for (const a of w.answers) { const x = u(a.uid, a.name); if (x) { x.answers = (x.answers || 0) + 1; x.last = Math.max(x.last, a.ts || 0); } }
+    // listening parties (open or recently closed)
+    const parties = [];
+    for (const rid of (await readJson(store, 'parties', [])).slice(0, 30)) {
+      const room = await readJson(store, 'pty/' + rid, null); if (!room) continue;
+      parties.push({ rid, title: room.title || '', host: room.host || '', hostId: room.hostId || '', closed: !!room.closed, created: room.created || 0, updated: room.updated || 0, songs: (room.queue || []).length });
+    }
+    // reactions per song (hearts = ありがとう) and bookmark / comment counts
+    const cc = await readJson(store, 'ccount', {}), bc = await readJson(store, 'bmcount', {});
+    const songRows = [];
+    for (const s of songs) {
+      const r = await readJson(store, 'sr/' + s.sid, {});
+      songRows.push({ ...s, likes: likes['s:' + s.sid] || 0, hearts: Array.isArray(r.thx) ? r.thx.length : 0, comments: cc['s:' + s.sid] || 0, bm: bc['s:' + s.sid] || 0 });
+    }
+    return json({ playlists: list.map((p) => ({ ...p, likes: likes['p:' + p.id] || 0, bm: bc[p.id] || 0, comments: cc[p.id] || 0 })), songs: songRows, comments, reports, posts, topics, parties,
+      users: Object.values(users).sort((a, b) => b.last - a.last), log, broadcasts: await readJson(store, 'broadcasts', []), at: Date.now() });
   }
   if (path === '/api/admin/act' && req.method === 'POST') {
     const { target, id, op, cid, kind, name, note } = await req.json().catch(() => ({}));
@@ -437,6 +455,32 @@ async function admin(req, path) {
         await log(`${name || id} の投稿をすべて非公開`); return json({ ok: true });
       }
       return json({ error: 'bad op' }, 400);
+    }
+    if (target === 'all' && op === 'broadcast') { // a notice from the operator to everyone who has used the app
+      const text = String(note || '').trim().slice(0, 200); if (!text) return json({ error: '本文を入力してください' }, 400);
+      const ids = new Set();
+      for (const p of await readJson(store, 'list', [])) if (p.ownerId) ids.add(p.ownerId);
+      for (const so of await readJson(store, 'songs', [])) { ids.add(so.byId); for (const a of so.also || []) ids.add(a.id); }
+      for (const x of await readJson(store, 'tl', [])) if (x.byId) ids.add(x.byId);
+      for (const id of Object.keys(await readJson(store, 'bans', {}))) ids.delete(id);
+      let n = 0;
+      for (const id of ids) { if (!id) continue; await notify(store, id, { t: 'admin', kind: 'a', id: '', title: '運営からのお知らせ', text }); n++; }
+      const hist = await readJson(store, 'broadcasts', []); hist.unshift({ at: Date.now(), text, n }); await store.setJSON('broadcasts', hist.slice(0, 50));
+      await log(`お知らせを配信（${n}人）：${text.slice(0, 60)}`); return json({ ok: true, n });
+    }
+    if (target === 'answer' && op === 'delete') { // remove one お題 answer: id = week, cid = the answerer's channel ID
+      if (!/^\d{4}-W\d{2}$/.test(id || '') || !/^UC[\w-]{20,}$/.test(cid || '')) return json({ error: 'bad id' }, 400);
+      if (!(await adminRemoveAnswer(store, id, cid))) return json({ error: 'この答えは見つかりませんでした' }, 404);
+      await log(`お題の答えを削除：${name || ''}`); return json({ ok: true });
+    }
+    if (target === 'party' && op === 'close') {
+      const room = await readJson(store, 'pty/' + id, null); if (!room) return json({ error: 'not found' }, 404);
+      await store.setJSON('pty/' + id, { ...room, closed: true, updated: Date.now() });
+      await log(`パーティーを終了：${room.title || id}`); return json({ ok: true });
+    }
+    if (target === 'song' && op === 'clearhead') {
+      await store.setJSON('songs', (await readJson(store, 'songs', [])).map((x) => (x.sid === id ? { ...x, head: '', updated: Date.now() } : x)));
+      await log(`おすすめ曲のタイトルを消去：${name || ''}`); return json({ ok: true });
     }
     if (target === 'report' && op === 'resolve') { await resolve(kind, id, cid); await log('通報を対応済みに'); return json({ ok: true }); }
     if (!['hide', 'show', 'delete'].includes(op)) return json({ error: 'bad op' }, 400);

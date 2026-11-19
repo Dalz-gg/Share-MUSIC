@@ -89,6 +89,23 @@ function mondayOfId(id) {
 const ymd = (t) => new Date(t).toISOString().slice(0, 10);
 export const weekInfo = (now = Date.now()) => { const mon = mondayOf(now); return { week: weekIdOf(mon), mon }; };
 export { weekIdOf, mondayOfId };
+/** admin page: this week and the recent weeks with every answer */
+export async function adminWeeks(store, n = 8) {
+  const { week, mon } = weekInfo();
+  const idx = await readJson(store, 'tp-idx', {});
+  const weeks = [week, ...Object.keys(idx).filter((k) => k !== week).sort().reverse()].slice(0, n);
+  const out = [];
+  for (const wk of weeks) { const m = wk === week ? mon : mondayOfId(wk); if (m == null) continue; const w = await loadWeek(store, wk, m); out.push({ week: wk, current: wk === week, start: ymd(m), title: w.title, custom: w.custom, answers: w.answers }); }
+  return out;
+}
+/** admin page: remove one person's answer from a week */
+export async function adminRemoveAnswer(store, week, uid) {
+  const m = mondayOfId(week); if (m == null) return false;
+  const w = await loadWeek(store, week, m);
+  const before = w.answers.length; w.answers = w.answers.filter((a) => a.uid !== uid);
+  if (w.answers.length === before) return false;
+  await saveWeek(store, w); return true;
+}
 /** built-in theme for the week starting at `mon` (rotates through the list by absolute week number) */
 const autoTheme = (mon) => { const n = Math.floor((mon - Date.UTC(1970, 0, 5)) / WEEK); const [title, desc] = THEMES[((n % THEMES.length) + THEMES.length) % THEMES.length]; return { title, desc }; };
 
