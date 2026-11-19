@@ -89,6 +89,8 @@ function mondayOfId(id) {
 const ymd = (t) => new Date(t).toISOString().slice(0, 10);
 export const weekInfo = (now = Date.now()) => { const mon = mondayOf(now); return { week: weekIdOf(mon), mon }; };
 export { weekIdOf, mondayOfId };
+/** this week's theme and answer count (link previews) */
+export async function currentTopic(store) { const { week, mon } = weekInfo(); const w = await loadWeek(store, week, mon); return { week, title: w.title, n: w.answers.length }; }
 /** admin page: this week and the recent weeks with every answer */
 export async function adminWeeks(store, n = 8) {
   const { week, mon } = weekInfo();

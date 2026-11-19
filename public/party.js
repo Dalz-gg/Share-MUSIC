@@ -338,7 +338,7 @@ function partyAction(act, el) {
     case 'pty-remove': Party.ctl('remove', { i: +el.dataset.i }); return true;
     case 'pty-open': Party.ctl('open', { open: el.checked }); return true;
     case 'pty-close': if (confirm('パーティーを終えますか？参加者の再生も止まります。')) { Party.ctl('close'); Player.close(); Party.listening = false; } return true;
-    case 'pty-share': { const r = Party.room, t = r?.queue?.[r.idx]; openShare({ url: location.origin + '/party/' + Party.rid, title: `LIVE：${r?.title || 'リスニングパーティー'}`, text: `いっしょに聴こう！「${r?.title || ''}」でリスニングパーティー開催中${t ? `\n♪ いま流れている曲：${t.title} / ${t.artist}` : ''} #ShareMUSIC` }); return true; }
+    case 'pty-share': { const r = Party.room, t = r?.queue?.[r.idx]; openShare({ url: location.origin + '/party/' + Party.rid, text: `いっしょに聴こう！リスニングパーティー「${r?.title || ''}」${t ? `\n♪ いま：${t.title} / ${t.artist}` : ''}` }); return true; }
     case 'pty-from-view': { const v = S.view; if (v?.tracks?.length) partyNew(v.tracks.map((t) => ({ id: t.id, title: t.name, artist: t.artist, thumb: t.thumb, d: t.d })), v.p?.title ? `「${v.p.title}」をみんなで` : ''); return true; }
     default: return false;
   }

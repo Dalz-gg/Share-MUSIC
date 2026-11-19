@@ -4,6 +4,7 @@
  *   /p/<playlistId>  playlist        /s/<sid>   recommended song     /c/<pid>  community post
  *   /party/<rid>     listening party /u/<channelId>  profile          /c, /party  section pages */
 import { getStore } from '@netlify/blobs';
+import { currentTopic } from './topics.mjs';
 
 const API_KEY = 'AIzaSyA4gaZyYp09zqvc8jbBmjqJRruWDhh80mM'; // same public, referrer-restricted key as config.js
 const SITE = globalThis.__SITE || 'https://playlist-share.netlify.app';
@@ -45,14 +46,29 @@ async function playlist(id) {
   const count = pl.contentDetails?.itemCount;
   const facts = [`${sn.channelTitle}さんのプレイリスト`, count ? `${count}曲` : '', g?.genres?.length ? g.genres.map((x) => GENRE[x]).filter(Boolean).join('・') : '', likes ? `♥ ${likes}` : ''].filter(Boolean).join(' ・ ');
   const intro = one(g?.desc || sn.description, 80);
-  return { title: sn.title, desc: `${facts}${intro ? ` ／ ${intro}` : ''} ／ 曲目を見て、その場で試聴できます。`, image, type: 'music.playlist' };
+  return { title: sn.title, desc: `${facts}${intro ? ` ・ ${intro}` : ''}`, image, type: 'music.playlist' };
 }
 
 async function song(sid) {
   const so = (await readJson(db(), 'songs', [])).find((x) => x.sid === sid && !x.hidden); if (!so) return null;
   const who = [so.by, ...(so.also || []).map((x) => x.name)].filter(Boolean);
-  const note = one(so.desc, 80);
-  return { title: `${so.title} — ${so.artist}`, desc: `${people(who)}のおすすめ曲${note ? `「${note}」` : ''} ／ タップしてその場で聴けます。`, image: so.art || `https://i.ytimg.com/vi/${so.videoId}/hqdefault.jpg`, type: 'music.song' };
+  let image = so.art ? so.art.replace(/\/\d+x\d+bb\./, '/1000x1000bb.') : `https://i.ytimg.com/vi/${so.videoId}/hqdefault.jpg`;
+  try { const m = await getStore('covers').getMetadata('og:' + sid); if (m?.metadata?.v) image = `${SITE}/api/og-img?sid=${encodeURIComponent(sid)}&v=${m.metadata.v}`; } catch { /* jacket */ }
+  const lead = one(so.head || so.moment?.line || so.desc, 60);
+  return { title: lead ? `「${lead}」` : `${so.title} / ${so.artist}`, desc: `${lead ? `♪ ${so.title} / ${so.artist} ・ ` : ''}${people(who)}のおすすめ`, image, type: 'music.song' };
+}
+
+async function topicPage(path) {
+  const store = db();
+  const m = /^\/topic\/(\d{4}-W\d{2})(?:\/(UC[\w-]{20,}))?$/.exec(path);
+  const idx = await readJson(store, 'tp-idx', {});
+  if (!m) { const c = await currentTopic(store).catch(() => null); return { title: c ? `今週のお題「${c.title}」` : '今週のお題', desc: `1人1曲で答えよう${c?.n ? `・いま${c.n}人が回答` : ''}` }; }
+  const rec = await readJson(store, 'tp/' + m[1], null);
+  const title = rec?.title || idx[m[1]]?.title || '今週のお題';
+  if (!m[2]) return { title: `お題「${title}」`, desc: `みんなの答え${rec?.answers?.length ? ` ${rec.answers.length}曲` : ''}を聴いてみよう` };
+  const a = (rec?.answers || []).find((x) => x.uid === m[2]); if (!a) return { title: `お題「${title}」`, desc: 'みんなの答えを聴いてみよう' };
+  const art = a.art ? a.art.replace(/\/\d+x\d+bb\./, '/1000x1000bb.') : `https://i.ytimg.com/vi/${a.id}/hqdefault.jpg`;
+  return { title: `♪ ${a.title} / ${a.artist}`, desc: `お題「${title}」への${a.name}さんの答え${a.moment?.line ? `「${one(a.moment.line, 40)}」` : ''}`, image: art, type: 'music.song' };
 }
 
 async function post(pid) {
@@ -115,6 +131,7 @@ export default async (req) => {
     else if ((m = /^\/c\/([a-f0-9]{14})$/.exec(path))) meta = await post(m[1]);
     else if ((m = /^\/party\/([a-f0-9]{10})$/.exec(path))) { meta = await party(m[1]); ttl = 30; }
     else if ((m = /^\/u\/(UC[\w-]{20,})$/.exec(path))) meta = await profile(m[1]);
+    else if (path === '/topic' || path.startsWith('/topic/')) meta = await topicPage(path);
     else if (SECTIONS[path]) meta = SECTIONS[path];
   } catch (e) { console.error(e); }
   if (meta) html = apply(html, { ...meta, url: SITE + path });
@@ -127,4 +144,4 @@ export default async (req) => {
   });
 };
 
-export const config = { path: ['/p/*', '/s/*', '/c', '/c/*', '/party', '/party/*', '/u/*', '/search'] };
+export const config = { path: ['/p/*', '/s/*', '/c', '/c/*', '/party', '/party/*', '/u/*', '/search', '/topic', '/topic/*'] };

@@ -459,3 +459,79 @@ const Social = {
   }, { passive: true });
 })();
 
+
+/* Link-preview image of a recommended song (LINE / X ...): 1200x630, drawn here and stored on the server (/api/og-img).
+ * Made by one of its recommenders when they post / edit it, or open its page and the stored one is out of date. */
+const OgCard = {
+  done: new Set(),
+  key: (so) => [so.head || '', so.moment?.line || '', so.title, so.artist, so.by, ...(so.also || []).map((x) => x.name), so.art || so.thumb || ''].join('|').slice(0, 300),
+  async ensure(so) {
+    try {
+      if (!so?.sid || !Api.connected()) return;
+      const me = await Api.myId().catch(() => ''); if (!me || !(so.byId === me || (so.also || []).some((a) => a.id === me))) return;
+      const k = this.key(so); if (this.done.has(so.sid + k)) return; this.done.add(so.sid + k);
+      const info = await (await fetch('/api/og-img?info=1&sid=' + encodeURIComponent(so.sid))).json().catch(() => ({}));
+      if (info.k === k) return;
+      const blob = await this.make(so); if (!blob) return;
+      const h = await Social.headers(); if (!h) return;
+      await fetch('/api/og-img?sid=' + encodeURIComponent(so.sid) + '&k=' + encodeURIComponent(k), { method: 'POST', headers: { ...h, 'Content-Type': 'image/jpeg' }, body: blob });
+    } catch { /* the jacket is used instead */ }
+  },
+  wrap(x, text, max, lines) {
+    const out = []; let cur = '';
+    for (const ch of text) { if (x.measureText(cur + ch).width > max && cur) { out.push(cur); cur = ch; if (out.length === lines) break; } else cur += ch; }
+    if (out.length < lines && cur) out.push(cur);
+    if (out.length === lines && out.join('').length < text.length) out[lines - 1] = out[lines - 1].slice(0, -1) + '…';
+    return out;
+  },
+  async make(so) {
+    const W = 1200, H = 630, c = document.createElement('canvas'); c.width = W; c.height = H;
+    const x = c.getContext('2d'), css = getComputedStyle(document.documentElement);
+    const g = ['--g1', '--g2', '--g3'].map((v) => css.getPropertyValue(v).trim() || '#b089ff');
+    await document.fonts?.ready;
+    const F = '"Zen Kaku Gothic New", "Hiragino Sans", sans-serif';
+    // background: deep base + soft theme glows
+    x.fillStyle = '#14121c'; x.fillRect(0, 0, W, H);
+    for (const [cx, cy, r, col] of [[120, 80, 560, g[0]], [1150, 120, 520, g[1]], [700, 700, 560, g[2]]]) {
+      const gr = x.createRadialGradient(cx, cy, 0, cx, cy, r); gr.addColorStop(0, col); gr.addColorStop(1, 'transparent');
+      x.globalAlpha = .38; x.fillStyle = gr; x.fillRect(0, 0, W, H);
+    }
+    x.globalAlpha = 1;
+    const art = await ShareImage.loadImg(so.art || so.thumb || `https://i.ytimg.com/vi/${so.videoId}/hqdefault.jpg`);
+    // record peeking out of the jacket
+    const S = 400, ax = 80, ay = 115, rcx = ax + S / 2 + 150, rcy = ay + S / 2, R = S / 2 - 8;
+    x.save(); x.shadowColor = 'rgba(0,0,0,.5)'; x.shadowBlur = 30; x.beginPath(); x.arc(rcx, rcy, R, 0, Math.PI * 2); x.fillStyle = '#111'; x.fill(); x.restore();
+    x.strokeStyle = 'rgba(255,255,255,.06)'; x.lineWidth = 1.2;
+    for (let r = R - 6; r > R * .42; r -= 5) { x.beginPath(); x.arc(rcx, rcy, r, 0, Math.PI * 2); x.stroke(); }
+    x.save(); x.beginPath(); x.arc(rcx, rcy, R * .36, 0, Math.PI * 2); x.clip();
+    if (art) { const s = R * .72; x.drawImage(art, rcx - s / 2, rcy - s / 2, s, s); } else { x.fillStyle = g[0]; x.fill(); }
+    x.restore();
+    x.beginPath(); x.arc(rcx, rcy, 7, 0, Math.PI * 2); x.fillStyle = '#14121c'; x.fill();
+    // jacket
+    x.save(); x.shadowColor = 'rgba(0,0,0,.55)'; x.shadowBlur = 40; x.shadowOffsetX = 12; x.shadowOffsetY = 16;
+    x.beginPath(); x.roundRect ? x.roundRect(ax, ay, S, S, 18) : x.rect(ax, ay, S, S); x.fillStyle = '#222'; x.fill(); x.restore();
+    x.save(); x.beginPath(); x.roundRect ? x.roundRect(ax, ay, S, S, 18) : x.rect(ax, ay, S, S); x.clip();
+    if (art) { const iw = art.naturalWidth, ih = art.naturalHeight, sc = Math.max(S / iw, S / ih) * (ih / iw < .7 ? 1.34 : 1); x.drawImage(art, ax + (S - iw * sc) / 2, ay + (S - ih * sc) / 2, iw * sc, ih * sc); }
+    x.restore();
+    // text
+    const tx = 690, tw = W - tx - 70;
+    const lead = (so.head || so.moment?.line || '').trim();
+    x.fillStyle = g[0]; x.font = `700 26px ${F}`; x.fillText(lead && !so.head ? 'ここを聴いて' : 'おすすめの1曲', tx, 150);
+    let y = 215;
+    x.fillStyle = '#fff'; x.font = `900 ${lead ? 52 : 58}px ${F}`;
+    for (const l of this.wrap(x, lead ? `「${lead}」` : so.title, tw, 3)) { x.fillText(l, tx, y); y += lead ? 70 : 76; }
+    y += 6;
+    x.fillStyle = 'rgba(255,255,255,.88)'; x.font = `700 30px ${F}`;
+    for (const l of this.wrap(x, lead ? `♪ ${so.title} / ${so.artist}` : so.artist, tw, 2)) { x.fillText(l, tx, y); y += 42; }
+    const who = [so.by, ...(so.also || []).map((a) => a.name)].filter(Boolean);
+    x.fillStyle = 'rgba(255,255,255,.62)'; x.font = `500 26px ${F}`;
+    x.fillText(this.wrap(x, `${who.length > 2 ? `${who[0]}さんほか${who.length - 1}人` : who.map((n) => n + 'さん').join('・')}のおすすめ`, tw, 1)[0] || '', tx, y + 6);
+    // footer: brand + "聴いてみる"
+    x.fillStyle = 'rgba(255,255,255,.9)'; x.font = `900 28px ${F}`; x.fillText('SHARE MUSIC', tx, H - 70);
+    const bw = 220, bx = W - 70 - bw, by = H - 112;
+    const bg = x.createLinearGradient(bx, 0, bx + bw, 0); bg.addColorStop(0, g[0]); bg.addColorStop(1, g[1]);
+    x.beginPath(); x.roundRect ? x.roundRect(bx, by, bw, 60, 30) : x.rect(bx, by, bw, 60); x.fillStyle = bg; x.fill();
+    x.fillStyle = '#fff'; x.font = `900 26px ${F}`; x.fillText('▶ 聴いてみる', bx + 36, by + 40);
+    return new Promise((res) => c.toBlob((b) => res(b), 'image/jpeg', .88));
+  },
+};

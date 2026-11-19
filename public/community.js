@@ -323,6 +323,7 @@ const Songs = {
       this.picked = null; this.results = null; this.q = ''; this.msg = ''; this.list = null;
       if (j.joined) { toast('すでに投稿されていた曲なので、あなたもおすすめした人に加わりました', 4000); return go('/s/' + j.sid); }
       toast('おすすめ曲を掲載しました'); drawMeTab();
+      Songs.load(true).then((l) => { const so = (l || Songs.list || []).find((x) => x.sid === j.sid); if (so) OgCard.ensure(so); }).catch(() => {});
     } catch (e) { toast(errText(e), 5000); btn.disabled = false; }
   },
   async del(sid) {

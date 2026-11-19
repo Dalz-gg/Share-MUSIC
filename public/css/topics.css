@@ -127,3 +127,6 @@
 
 /* ---- admin ---- */
 .tpc-adm { margin-top: 12px; }
+
+.tpc-share { margin-left: 8px; width: 32px; height: 32px; flex: none; border-radius: 50%; border: 1px solid var(--line); background: var(--glass-2); color: var(--ink); display: grid; place-items: center; cursor: pointer; }
+.tpc-share svg { width: 15px; height: 15px; }

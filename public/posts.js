@@ -323,8 +323,8 @@ function postAction(act, el, ev) {
       el.closest('.post-menu').hidden = true;
       const p = Posts.cache.get(el.dataset.pid), url = location.origin + '/c/' + el.dataset.pid;
       const songs = p?.songs || [], what = p?.battle ? '曲バトル' : songs.length > 1 ? 'ミックステープ' : 'つぶやき';
-      const body = p?.battle && songs.length === 2 ? `${songs[0].title} vs ${songs[1].title} どっちが好き？` : (p?.text || '').slice(0, 80) || (songs[0] ? `♪ ${songs[0].title} / ${songs[0].artist}` : '');
-      openShare({ url, title: `${p?.by || ''}さんの${what}`, text: `${p?.by || ''}さんの${what}${body ? `「${body}」` : ''} #ShareMUSIC` });
+      const body = p?.battle && songs.length === 2 ? `${songs[0].title} vs ${songs[1].title} どっちが好き？` : (p?.text || '').replace(/\s+/g, ' ').slice(0, 40) || (songs[0] ? `♪ ${songs[0].title} / ${songs[0].artist}` : '');
+      openShare({ url, text: `${p?.by || ''}さんの${what}${body ? `「${body}」` : ''}` });
       return true;
     }
     case 'post-reply': { const p = Posts.cache.get(el.dataset.pid); if (p) Composer.open({ parent: p }); return true; }

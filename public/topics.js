@@ -110,7 +110,7 @@ const Topics = {
     const others = list.map((a, i) => [a, i]).filter(([a]) => a.uid !== me);
     setApp(`<div class="tpc-page">
       <section class="tpc-hero">
-        <div class="tpc-head"><span class="tpc-kicker">${this.icon}今週のお題</span><span class="tpc-dates">${this.range(t)}</span></div>
+        <div class="tpc-head"><span class="tpc-kicker">${this.icon}今週のお題</span><span class="tpc-dates">${this.range(t)}</span><button class="tpc-share" data-act="tpc-share" aria-label="お題を共有">${ICON.link}</button></div>
         <h1 class="tpc-h1">${esc(t.title)}</h1>
         ${t.desc ? `<p class="tpc-desc">${esc(t.desc)}</p>` : ''}
         <div class="tpc-sub">1人1曲だけ。「ここを聴いて」と一言を添えて答えよう（日曜24時まで・あとから差し替えOK）</div>
@@ -201,6 +201,7 @@ const Topics = {
       <div class="vactions">
         <button class="playbig" data-act="play-all" aria-label="全部聴く">${ICON.play}</button>
         <button class="ibtn mvbtn" data-act="play-mv" title="MVを見る">MV</button>
+        <button class="ibtn" data-act="tpc-share-a" data-text="${esc(`お題「${t.title}」への${a.name}さんの答え\n♪ ${a.title} / ${a.artist}`)}" title="共有" aria-label="共有">${ICON.link}</button>
         <span class="spacer"></span>
       </div>
       <a class="btn accent ytm-open" href="https://music.youtube.com/watch?v=${esc(a.id)}" target="_blank" rel="noopener">YouTube Music で開く ${ICON.ext}</a>
@@ -396,6 +397,8 @@ const Topics = {
         case 'tpc-answer': this.openAnswer(); return true;
         case 'tpc-play': this.play(el.dataset.k, +el.dataset.i); return true;
         case 'tpc-detail': this.detail(el.dataset.k, +el.dataset.i); return true;
+        case 'tpc-share': openShare({ url: location.origin + '/topic', text: `今週のお題「${this.cur?.title || ''}」\n1人1曲で答えよう` }); return true;
+        case 'tpc-share-a': openShare({ url: location.origin + location.pathname, text: el.dataset.text }); return true;
         case 'tpc-search': this.search(); return true;
         case 'tpc-pick': this.pick(+el.dataset.i); return true;
         case 'tpc-moment': this.chooseMoment(); return true;

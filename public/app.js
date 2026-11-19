@@ -557,18 +557,31 @@ const ShareSheet = {
 };
 
 /** share a page: the phone's share sheet (LINE, X, ...) with a message that fits the page, or copy the link */
-async function openShare({ url, text, title }) {
+/** share a page: the phone's share sheet (LINE, X, ...) with a short message, or copy the link.
+ *  Only text + url are passed: several apps paste the title too, which doubled the message. */
+async function openShare({ url, text }) {
   if (navigator.share && matchMedia('(pointer: coarse)').matches) {
-    try { await navigator.share({ title: title || 'Share MUSIC', text, url }); return; } catch (e) { if (e?.name === 'AbortError') return; }
+    try { await navigator.share({ text, url }); return; } catch (e) { if (e?.name === 'AbortError') return; }
   }
   if (await copyText(url)) toast('リンクをコピーしました');
 }
+/** short share messages (1–2 lines; the link preview shows the rest) */
+const ShareText = {
+  people(list) { list = list.filter(Boolean); return list.length > 2 ? `${list[0]}さんほか${list.length - 1}人` : list.map((x) => x + 'さん').join('・'); },
+  song(so) {
+    const lead = (so.head || so.moment?.line || '').trim();
+    return `${lead ? `「${lead.slice(0, 40)}」\n` : ''}♪ ${so.title} / ${so.artist}（${this.people([so.by, ...(so.also || []).map((x) => x.name)])}のおすすめ）`;
+  },
+  playlist: (p, n) => `${p.title}${n ? `（${n}曲）` : ''}｜${p.owner}さんのプレイリスト`,
+  profile: (name) => `${name}さんのおすすめ曲をチェック`,
+  site: 'Share MUSIC｜人のおすすめで、新しい曲と出会う',
+};
 function shareThis() {
   const url = location.origin + location.pathname, v = S.view;
-  if (v?.song) { const so = v.song, who = [so.by, ...(so.also || []).map((x) => x.name)].filter(Boolean); return openShare({ url, title: `${so.title} — ${so.artist}`, text: `♪ ${so.title} / ${so.artist}\n${who.slice(0, 2).join('さん、')}さん${who.length > 2 ? `ほか${who.length - 2}人` : ''}のおすすめ曲${so.desc ? `「${so.desc.slice(0, 60)}」` : ''} #ShareMUSIC` }); }
-  if (v?.p && location.pathname.startsWith('/p/')) return openShare({ url, title: v.p.title, text: `「${v.p.title}」— ${v.p.owner}さんのプレイリスト（${v.tracks?.length || 0}曲）#ShareMUSIC` });
-  if (location.pathname.startsWith('/u/')) { const n = $('.phead h1')?.textContent || ''; return openShare({ url, title: `${n}さん`, text: `${n}さんの音楽をチェック #ShareMUSIC` }); }
-  return openShare({ url, text: 'Share MUSIC — 人のおすすめで、新しい曲と出会う。好きな曲をおすすめして、共感し合おう。' });
+  if (v?.song && location.pathname.startsWith('/s/')) return openShare({ url, text: ShareText.song(v.song) });
+  if (v?.p && location.pathname.startsWith('/p/')) return openShare({ url, text: ShareText.playlist(v.p, v.tracks?.length) });
+  if (location.pathname.startsWith('/u/')) { const n = $('.phead h1')?.textContent || ''; return openShare({ url, text: ShareText.profile(n) }); }
+  return openShare({ url, text: ShareText.site });
 }
 
 /** share hub (bottom "+"): choose a playlist or a song, then a page of its own */
@@ -1356,7 +1369,7 @@ const SongEdit = {
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.error || '保存できませんでした');
       Object.assign(so, j.item); if (!j.item?.moment) delete so.moment; if (window.Discover) Discover.edit = null; S.view.p.title = so.title; S.view.tracks[0].name = so.title; S.view.tracks[0].artist = so.artist;
-      Songs.list = null; toast('保存しました'); drawSong();
+      Songs.list = null; toast('保存しました'); drawSong(); OgCard.ensure(so);
     } catch (e) { toast(errText(e), 5000); btn.disabled = false; }
   },
 };

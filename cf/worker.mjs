@@ -18,7 +18,7 @@ import { ASSETS as EMBEDDED } from './static-server.mjs';
 const ROUTES = [
   [(p) => p.startsWith('/p/') || p.startsWith('/s/') || p === '/c' || p.startsWith('/c/') || p === '/party' || p.startsWith('/party/') || p === '/topic' || p.startsWith('/topic/') || p.startsWith('/u/') || p === '/search', og],
   [(p) => p === '/api/mv' || p === '/api/ja', api],
-  [(p) => p === '/api/cover' || p === '/api/cover-info', cover],
+  [(p) => p === '/api/cover' || p === '/api/cover-info' || p === '/api/og-img', cover],
   [(p) => p === '/api/gallery' || p === '/api/gallery-status' || p === '/api/bookmarks', gallery],
   [(p) => ['/api/like', '/api/comments', '/api/songs', '/api/song-search', '/api/song-match', '/api/profile'].includes(p) || p.startsWith('/api/admin/'), community],
   [(p) => p.startsWith('/api/auth/'), auth],

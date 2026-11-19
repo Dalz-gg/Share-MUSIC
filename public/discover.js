@@ -12,6 +12,8 @@
  * whose length differs from the lyrics' length, the difference is treated as an intro and added when seeking. */
 'use strict';
 
+const RELOAD = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4.5v4.2h-4.2"/></svg>';
+
 const Discover = {
   SCENES: [
     ['night', '夜の帰り道'], ['morning', '朝'], ['rain', '雨の日'], ['drive', 'ドライブ'], ['work', '作業・勉強'],
@@ -235,7 +237,7 @@ const Discover = {
     const here = location.pathname === (so.detail || '/s/' + so.sid);
     const scenes = this.sceneTags(so);
     el.innerHTML = `<div class="dsc-pv-card" role="dialog" aria-label="${esc(so.title)} の試聴">
-      <button class="dsc-pv-close" data-act="dsc-pv-close" aria-label="試聴を閉じる">${ICON.close}</button>
+      <div class="dsc-pv-tr"><button class="dsc-pv-ib" data-act="dsc-share" aria-label="この曲を共有">${ICON.link}</button><button class="dsc-pv-ib dsc-pv-close" data-act="dsc-pv-close" aria-label="試聴を閉じる">${ICON.close}</button></div>
       <div class="dsc-pv-deck ${Player.playing ? 'spin' : ''}" id="dsc-pv-deck">
         <span class="dsc-pv-disc"><span class="dsc-pv-lbl">${art ? `<img src="${esc(art)}" alt="">` : ''}<i></i></span></span>
         <div class="dsc-pv-vslot" id="dsc-pv-vslot"></div>
@@ -250,10 +252,9 @@ const Discover = {
         : `<p class="on solo">${st ? esc(this.lineOf(so) || (pv.ly ? '（同期歌詞がない曲です）' : '（歌詞が見つかりませんでした）')) : '<span class="spinner"></span>'}</p>`}</div>
       <div class="dsc-pv-bar"><i id="dsc-pv-bar"></i></div>
       <div class="dsc-pv-ctl">
-        <span class="dsc-pv-adjg"><button class="dsc-mini" data-act="dsc-adj" data-d="-1" aria-label="1秒早める">−1</button><span class="dsc-adj" id="dsc-adj">${pv.adj ? `${pv.adj > 0 ? '+' : ''}${pv.adj}秒` : 'ずれ補正'}</span><button class="dsc-mini" data-act="dsc-adj" data-d="1" aria-label="1秒遅らせる">+1</button></span>
-        <span class="spacer"></span>
-        <button class="btn sm quiet" data-act="dsc-replay">もう一度</button>
+        <button class="dsc-pv-rep" data-act="dsc-replay" aria-label="「ここを聴いて」からもう一度">${RELOAD}<span>もう一度</span></button>
         <button class="dsc-pv-pp" data-act="p-toggle" id="dsc-pv-pp" aria-label="再生/一時停止">${Player.playing ? ICON.pause : ICON.play}</button>
+        <span class="dsc-pv-ctl-r" aria-hidden="true"></span>
       </div>
       <div class="dsc-pv-foot">
         <button class="btn solid dsc-pv-detail" data-act="dsc-detail"><span class="t">${here ? 'このページで全部聴く' : so.sid ? '曲の詳細へ（全部聴く・コメント）' : '詳細へ（全部聴く）'}</span><span class="c" aria-hidden="true">›</span></button>
@@ -358,6 +359,7 @@ const Discover = {
       case 'dsc-pv-song': if (S.view?.song) this.preview(S.view.song); return true;
       case 'dsc-pv-close': this.stop(); Player.close(); return true;
       case 'dsc-detail': this.detail(); return true;
+      case 'dsc-share': { const so = this.pv?.song; if (so) openShare({ url: location.origin + (so.detail || '/s/' + so.sid), text: ShareText.song(so) }); return true; }
       case 'dsc-full': this.full(); return true;
       case 'dsc-replay': this.replay(); return true;
       case 'dsc-adj': this.nudge(+el.dataset.d || 0); return true;
@@ -513,6 +515,6 @@ window.Discover = Discover;
 (function plug() {
   if (typeof Hooks === 'undefined') return setTimeout(plug, 0);
   Hooks.actions.push((act, el, ev) => (act.startsWith('dsc-') ? Discover.action(act, el, ev) : false));
-  Hooks.song.push(() => { Discover.edit = null; }); // the song page plays the whole song; its edit form (app.js SongEdit) holds title / moment / scenes
+  Hooks.song.push((so) => { Discover.edit = null; setTimeout(() => { if (S.view?.song === so) OgCard.ensure(so); }, 1500); }); // the link-preview image is refreshed by a recommender; the song page plays the whole song; its edit form (app.js SongEdit) holds title / moment / scenes
 })();
 document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && Pick.el) Pick.close(null); });
